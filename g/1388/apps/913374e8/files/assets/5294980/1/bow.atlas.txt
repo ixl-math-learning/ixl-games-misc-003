@@ -1,0 +1,34 @@
+
+bow.png
+size: 512,256
+format: RGBA8888
+filter: Linear,Linear
+repeat: none
+Will_Bow_lowerlimb
+  rotate: true
+  xy: 2, 14
+  size: 110, 376
+  orig: 110, 376
+  offset: 0, 0
+  index: -1
+Will_Bow_upperlimb
+  rotate: true
+  xy: 2, 126
+  size: 110, 379
+  orig: 110, 379
+  offset: 0, 0
+  index: -1
+string_lower
+  rotate: true
+  xy: 2, 2
+  size: 10, 330
+  orig: 10, 330
+  offset: 0, 0
+  index: -1
+string_upper
+  rotate: true
+  xy: 2, 2
+  size: 10, 330
+  orig: 10, 330
+  offset: 0, 0
+  index: -1

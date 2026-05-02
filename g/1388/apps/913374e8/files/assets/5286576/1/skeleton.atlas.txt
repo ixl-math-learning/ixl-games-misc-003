@@ -1,0 +1,41 @@
+
+skeleton.png
+size: 1024,512
+format: RGBA8888
+filter: Linear,Linear
+repeat: none
+Bob_Arm_left
+  rotate: true
+  xy: 741, 331
+  size: 112, 213
+  orig: 112, 213
+  offset: 0, 0
+  index: -1
+Bob_Arm_right
+  rotate: false
+  xy: 450, 2
+  size: 92, 203
+  orig: 92, 203
+  offset: 0, 0
+  index: -1
+Bob_Head
+  rotate: false
+  xy: 2, 17
+  size: 446, 426
+  orig: 446, 426
+  offset: 0, 0
+  index: -1
+Bob_legs
+  rotate: false
+  xy: 450, 207
+  size: 132, 236
+  orig: 132, 236
+  offset: 0, 0
+  index: -1
+Bob_torso
+  rotate: false
+  xy: 584, 267
+  size: 155, 176
+  orig: 155, 176
+  offset: 0, 0
+  index: -1

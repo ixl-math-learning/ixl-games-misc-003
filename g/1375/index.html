@@ -1,0 +1,236 @@
+<!DOCTYPE html>
+
+<html lang="en">
+<head>
+<title>Asphalt Retro</title>
+<meta content="yes" name="apple-mobile-web-app-capable"/>
+<meta charset="utf-8"/>
+<meta content="width=device-width, user-scalable=no, initial-scale=1, minimum-scale=1, maximum-scale=1" name="viewport"/>
+<link href="rvvASMiM/2c122cee7ef04222a962449e32a34e98/icon.png" rel="icon"/>
+<link href="rvvASMiM/2c122cee7ef04222a962449e32a34e98/icon.png" rel="apple-touch-icon"/>
+<link href="rvvASMiM/2c122cee7ef04222a962449e32a34e98/icon.png" rel="apple-touch-startup-image"/>
+<meta content="yes" name="apple-mobile-web-app-capable"/>
+<meta content="black-translucent" name="apple-mobile-web-app-status-bar-style"/>
+<meta content="telephone=no" name="format-detection"/>
+<meta content="webkit" name="renderer">
+<meta content="webkit" name="force-rendering">
+<meta content="IE=edge,chrome=1" http-equiv="X-UA-Compatible">
+<meta content="no" name="msapplication-tap-highlight"/>
+<meta content="yes" name="full-screen">
+<meta content="true" name="x5-fullscreen"/>
+<meta content="true" name="360-fullscreen"/>
+<meta content="portrait" name="screen-orientation"/>
+<meta content="portrait" name="x5-orientation"/>
+<meta content="app" name="x5-page-mode"/>
+<meta content="908265966272252" property="fb:app_id">
+<meta content="website" property="og:type">
+<meta content="Asphalt Retro" property="og:title"/>
+<meta content="Asphalt Retro" property="og:description"/>
+<meta content="image/jpeg" property="og:image:type"/>
+<meta content="640" property="og:image:width"/>
+<meta content="480" property="og:image:height"/>
+<style>
+		body {
+			margin: 0;
+			overflow: hidden;
+			-webkit-tap-highlight-color: rgba(0,0,0,0);
+		}
+
+		canvas {
+			padding-left: 0;
+			padding-right: 0;
+			display: block;
+			
+			image-rendering: crisp-edges;
+			image-rendering: optimizeSpeed;             /* Older versions of FF          */
+			image-rendering: -moz-crisp-edges;          /* FF 6.0+                       */
+			image-rendering: -webkit-optimize-contrast; /* Safari                        */
+			image-rendering: -o-crisp-edges;            /* OS X & Windows Opera (12.02+) */
+			image-rendering: pixelated;                 /* Awesome future-browsers       */
+			-ms-interpolation-mode: nearest-neighbor;   /* IE                            */
+			
+			-webkit-tap-highlight-color: rgba(0,0,0,0);
+			
+			z-index: 0;
+		}
+		
+		@font-face {
+			font-family: "Wonder";
+			src: url('rvvASMiM/2c122cee7ef04222a962449e32a34e98/Fonts/RetroGaming.ttf') format('truetype');
+		}
+	</style>
+<script type="text/javascript">
+			window.adsState = 0;
+			window["GD_OPTIONS"] = {
+						"gameId": "2c122cee7ef04222a962449e32a34e98",
+						"onEvent": function(event) {
+								window.dispatchEvent(new CustomEvent(event.name, {}));
+								switch (event.name) {
+										case "SDK_GAME_START":
+												window.focus();
+												window.adsState = 2;
+												// advertisement done, resume game logic and unmute audio
+												break;
+										case "SDK_GAME_PAUSE":
+												// pause game logic / mute audio
+												break;
+										case "SDK_GDPR_TRACKING":
+												// this event is triggered when your user doesn't want to be tracked
+												break;
+										case "SDK_GDPR_TARGETING":
+												// this event is triggered when your user doesn't want personalised targeting of ads and such
+												break;
+										case "SDK_REWARDED_WATCH_COMPLETE":
+												// this event is triggered when your user completely watched rewarded ad
+												break;
+								}
+						},
+				};
+				(function(d, s, id) {
+						var js, fjs = d.getElementsByTagName(s)[0];
+						if (d.getElementById(id)) return;
+						js = d.createElement(s);
+						js.id = id;
+						js.src = 'https://html5.api.gamedistribution.com/main.min.js';
+						fjs.parentNode.insertBefore(js, fjs);
+				}(document, 'script', 'gamedistribution-jssdk'));
+			</script>
+</meta></meta></meta></meta></meta></meta></head>
+<body>
+<!-- ============================================================================================ -->
+<!-- ============================================================================================ -->
+<noscript></noscript>
+<!-- <script src="//play.ludigames.com/js/cookieconsent.js" charset="utf-8"></script> -->
+<script>
+		window.focus();
+		document.addEventListener('keydown', function(event) {
+					event.preventDefault();
+				});
+		window.playAds = function(){};
+		var enableADS = !true;
+		dataLayer = [];
+		var productKey = ""; 
+		var productTitle = "Asphalt Retro"; // is the game name. Example : Nitro Street Run
+		var gtmID = "";
+		if (enableADS)
+		{
+			gtmID = 'GTM-PLZ2PKZ'; //
+			productKey = "asphaltRetroFree";  // is the game name with no space, the first letter is lowercase and add “Free” text at the end. Example : fashionHolicFree
+			var adsSDK_url = '../js/games_lib/adsSDK/adsSDK.js'
+			var adsSDK_gameConfigUrl = '../js/games_lib/adsSDK/game_config.js'
+			var ima3Url = '//imasdk.googleapis.com/js/sdkloader/ima3.js'
+			
+			dataLayer.push({
+				'publisher' :  'Gameloft', // is the name of the game owner. Example: GAMELOFT
+			});
+		}
+		else
+		{
+			gtmID = 'GTM-K74X66';
+			productKey = "asphaltRetro"; // is the game name with no space. Example : fashionHolic
+			
+			dataLayer.push({
+				'event': 'pageLoad',
+				'publisher' :'Gameloft',  // is the name of the game owner. Example: GAMELOFT
+			});
+		}
+
+        (function(w, d, s, l, i) {
+            w[l] = w[l] || [];
+            w[l].push({
+                'gtm.start': new Date().getTime(),
+                event: 'rvvASMiM/2c122cee7ef04222a962449e32a34e98/gtm.js'
+            });
+            var f = d.getElementsByTagName(s)[0],
+                j = d.createElement(s),
+                dl = l != 'dataLayer' ? '&l=' + l : '';
+            j.async = true;
+            j.src =
+                'https://www.googletagmanager.com/gtm.js?id=' + i + dl;
+            f.parentNode.insertBefore(j, f);
+        })(window, document, 'script', 'dataLayer', gtmID);
+	</script>
+<script>
+		function loadOrderScript(t, e, d) {
+			var n = document.createElement("script");
+			n.setAttribute("src", t), n.onload = function() {
+				if (void 0 !== e) {
+					var t = document.createElement("script");
+					t.setAttribute("src", e), t.onload = function() {
+						if (void 0 !== d) {
+							var t = document.createElement("script");
+							t.setAttribute("src", d), document.body.appendChild(t)
+						}
+					}, document.body.appendChild(t)
+				}
+			}, document.body.appendChild(n)
+		}
+	</script>
+<div id="adsContainer" style="display:none; z-index: 2;"></div>
+<!-- ============================================================================================ -->
+<!-- ============================================================================================ -->
+<canvas height="320" id="canvas" width="240"></canvas>
+<input id="inputName" style="display:block; z-index: 1;" type="text"/>
+<script>
+		window.fbAsyncInit = function() {
+			FB.init({
+				appId      : "908265966272252",
+				cookie     : true,
+				xfbml      : true,
+				version    : "v5.0"
+			});
+
+			FB.AppEvents.logPageView();   
+		};
+
+		(function(d, s, id){
+			var js, fjs = d.getElementsByTagName(s)[0];
+			if (d.getElementById(id)) {return;}
+			js = d.createElement(s); js.id = id;
+			js.src = "https://connect.facebook.net/en_US/sdk.js";
+			fjs.parentNode.insertBefore(js, fjs);
+		}(document, 'script', 'facebook-jssdk'));
+		
+		var adsContainer = document.getElementById("adsContainer");
+	</script>
+<script src="rvvASMiM/2c122cee7ef04222a962449e32a34e98/Source/Button.js"></script>
+<script src="rvvASMiM/2c122cee7ef04222a962449e32a34e98/Source/Engine/GraphicEngine.js"></script>
+<script src="rvvASMiM/2c122cee7ef04222a962449e32a34e98/Source/Engine/InputEngine.js"></script>
+<script src="rvvASMiM/2c122cee7ef04222a962449e32a34e98/Source/Engine/ParticleEngine.js"></script>
+<script src="rvvASMiM/2c122cee7ef04222a962449e32a34e98/Source/Engine/StateEngine.js"></script>
+<script src="rvvASMiM/2c122cee7ef04222a962449e32a34e98/Source/Helper.js"></script>
+<script src="rvvASMiM/2c122cee7ef04222a962449e32a34e98/Source/Settings.js"></script>
+<script src="rvvASMiM/2c122cee7ef04222a962449e32a34e98/Source/Localization.js"></script>
+<script src="rvvASMiM/2c122cee7ef04222a962449e32a34e98/Source/GSLoader/GSLoader.js"></script>
+<script src="rvvASMiM/2c122cee7ef04222a962449e32a34e98/Source/GSMenu/GSMenu.js"></script>
+<script src="rvvASMiM/2c122cee7ef04222a962449e32a34e98/Source/GSMapSelect/GSMapSelect.js"></script>
+<script src="rvvASMiM/2c122cee7ef04222a962449e32a34e98/Source/GSCarSelect/GSCarSelect.js"></script>
+<script src="rvvASMiM/2c122cee7ef04222a962449e32a34e98/Source/GSResult/GSResult.js"></script>
+<script src="rvvASMiM/2c122cee7ef04222a962449e32a34e98/Source/GSOption/GSOption.js"></script>
+<script src="rvvASMiM/2c122cee7ef04222a962449e32a34e98/Source/GSLegal/GSLegal.js"></script>
+<script src="rvvASMiM/2c122cee7ef04222a962449e32a34e98/Source/GSAbout/GSAbout.js"></script>
+<script src="rvvASMiM/2c122cee7ef04222a962449e32a34e98/Source/GSHelp/GSHelp.js"></script>
+<script src="rvvASMiM/2c122cee7ef04222a962449e32a34e98/Source/GSLeaderboard/GSLeaderboard.js"></script>
+<script src="rvvASMiM/2c122cee7ef04222a962449e32a34e98/Source/GSAction/GSAction.js"></script>
+<script src="rvvASMiM/2c122cee7ef04222a962449e32a34e98/Source/GSAction/GSInGameMenu.js"></script>
+<script src="rvvASMiM/2c122cee7ef04222a962449e32a34e98/Source/GSAction/Car.js"></script>
+<script src="rvvASMiM/2c122cee7ef04222a962449e32a34e98/Source/GSAction/Enemy.js"></script>
+<script src="rvvASMiM/2c122cee7ef04222a962449e32a34e98/Source/GSAction/Tourist.js"></script>
+<script src="rvvASMiM/2c122cee7ef04222a962449e32a34e98/Source/GSAction/Police.js"></script>
+<script src="rvvASMiM/2c122cee7ef04222a962449e32a34e98/Source/GSAction/Helicopter.js"></script>
+<script src="rvvASMiM/2c122cee7ef04222a962449e32a34e98/Source/GSAction/Road.js"></script>
+<script src="rvvASMiM/2c122cee7ef04222a962449e32a34e98/Source/GSAction/RoadSpike.js"></script>
+<script src="rvvASMiM/2c122cee7ef04222a962449e32a34e98/Source/GSAction/Background.js"></script>
+<script src="rvvASMiM/2c122cee7ef04222a962449e32a34e98/Source/GSAction/Particle.js"></script>
+<script src="rvvASMiM/2c122cee7ef04222a962449e32a34e98/Source/GSAction/PowerUp.js"></script>
+<script src="rvvASMiM/2c122cee7ef04222a962449e32a34e98/Source/GSAction/Obstacle.js"></script>
+<script src="rvvASMiM/2c122cee7ef04222a962449e32a34e98/Source/GSAction/Fragment.js"></script>
+<script src="rvvASMiM/2c122cee7ef04222a962449e32a34e98/Source/GSAction/Track.js"></script>
+<script src="rvvASMiM/2c122cee7ef04222a962449e32a34e98/Source/GSAction/CarData.js"></script>
+<script src="rvvASMiM/2c122cee7ef04222a962449e32a34e98/Source/Sound/SoundManager.js"></script>
+<script src="rvvASMiM/2c122cee7ef04222a962449e32a34e98/Source/Sound/Sound.js"></script>
+<script src="rvvASMiM/2c122cee7ef04222a962449e32a34e98/Source/Tracking.js"></script>
+<script src="rvvASMiM/2c122cee7ef04222a962449e32a34e98/Source/Main.js"></script>
+<script src="rvvASMiM/2c122cee7ef04222a962449e32a34e98/Source/Resources.js"></script>
+</body>
+</html>

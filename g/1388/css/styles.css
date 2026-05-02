@@ -1,0 +1,184 @@
+@font-face {
+    font-family: "Proxima Nova";
+    src: url("../fonts/ProximaNova-Reg.otf") format("opentype");
+    font-weight: 400;
+    font-style: normal;
+    font-display: swap;
+}
+
+html {
+    height: 100%;
+}
+
+body {
+    margin: 0;
+    height: 100%;
+    overflow: hidden;
+    font-family: "Proxima Nova", Helvetica, arial, freesans, clean, sans-serif;
+
+    -webkit-touch-callout: none;
+    -webkit-user-select: none;
+    user-select: none;
+}
+
+main {
+    position: absolute;
+    inset: 0 0 36px 0;
+    overflow: hidden;
+}
+
+#frame {
+    border: none;
+    width: 100%;
+    height: 100%;
+    overflow: hidden;
+}
+
+footer {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    height: 36px;
+    display: flex;
+    align-items: center;
+    background: #263538;
+    color: #a0b2b5;
+    overflow: hidden;
+}
+
+footer a,
+footer button {
+    color: inherit;
+}
+
+footer svg {
+    display: block;
+}
+
+footer > .title {
+    flex: none;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 36px;
+    height: 36px;
+    padding: 8px;
+    box-sizing: border-box;
+}
+
+footer > .title > .logo {
+    width: 100%;
+    height: 100%;
+}
+
+footer > .title:hover {
+    background-color: #1d292c;
+    color: #fff;
+}
+
+footer > .credits {
+    flex: 1;
+    min-width: 0;
+    padding-left: 4px;
+    font-size: 14px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+footer > .credits a {
+    text-decoration: none;
+}
+
+footer > .credits a:hover {
+    color: #fff;
+}
+
+footer > .views {
+    flex: none;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    font-size: 14px;
+    padding: 0 8px;
+    cursor: default;
+}
+
+footer > .views > .icon {
+    width: 20px;
+    height: 20px;
+}
+
+footer > #fullscreen,
+footer > #share {
+    display: none;
+    flex: none;
+    width: 36px;
+    height: 36px;
+    padding: 6px;
+    cursor: pointer;
+    background: none;
+    border: none;
+    box-sizing: border-box;
+}
+
+footer > #fullscreen > svg,
+footer > #share > svg {
+    width: 100%;
+    height: 100%;
+}
+
+footer > #fullscreen:hover,
+footer > #share:hover {
+    background-color: #1d292c;
+    color: #fff;
+}
+
+footer > #fullscreen.available,
+footer > #share.available {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+@media all and (max-width: 640px) {
+    footer > .title {
+        width: 24px;
+        height: 24px;
+        padding: 4px;
+    }
+
+    footer > .credits {
+        display: none;
+    }
+
+    footer > .views {
+        margin-left: auto;
+        font-size: 12px;
+        padding: 0 4px;
+    }
+
+    footer > .views > .icon {
+        width: 16px;
+        height: 16px;
+    }
+
+    footer > #fullscreen,
+    footer > #share {
+        width: 24px;
+        height: 24px;
+        padding: 4px;
+    }
+}
+
+/* hide footer if needed */
+@media (max-height: 768px), (max-height: 1024px) and (orientation: portrait) {
+    footer {
+        display: none;
+    }
+
+    main {
+        bottom: 0;
+    }
+}

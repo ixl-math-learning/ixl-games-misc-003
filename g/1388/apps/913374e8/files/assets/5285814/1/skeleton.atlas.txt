@@ -1,0 +1,69 @@
+
+skeleton.png
+size: 1024,1024
+format: RGBA8888
+filter: Linear,Linear
+repeat: none
+Will_Abdomen
+  rotate: false
+  xy: 268, 220
+  size: 242, 229
+  orig: 242, 229
+  offset: 0, 0
+  index: -1
+Will_BowArm
+  rotate: false
+  xy: 563, 881
+  size: 362, 110
+  orig: 362, 110
+  offset: 0, 0
+  index: -1
+Will_BowArm_Hand
+  rotate: true
+  xy: 761, 667
+  size: 101, 97
+  orig: 101, 97
+  offset: 0, 0
+  index: -1
+Will_Head
+  rotate: false
+  xy: 2, 451
+  size: 559, 540
+  orig: 559, 540
+  offset: 0, 0
+  index: -1
+Will_RightLeg
+  rotate: true
+  xy: 2, 2
+  size: 150, 182
+  orig: 150, 182
+  offset: 0, 0
+  index: -1
+Will_StringForeArm
+  rotate: false
+  xy: 563, 770
+  size: 291, 109
+  orig: 291, 109
+  offset: 0, 0
+  index: -1
+Will_StringUpperArm
+  rotate: false
+  xy: 563, 636
+  size: 196, 132
+  orig: 196, 132
+  offset: 0, 0
+  index: -1
+Will_Torso
+  rotate: false
+  xy: 2, 154
+  size: 264, 295
+  orig: 264, 295
+  offset: 0, 0
+  index: -1
+Will_leftLeg
+  rotate: true
+  xy: 563, 520
+  size: 114, 206
+  orig: 114, 206
+  offset: 0, 0
+  index: -1

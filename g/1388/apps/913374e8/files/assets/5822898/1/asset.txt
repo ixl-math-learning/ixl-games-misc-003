@@ -1,0 +1,6670 @@
+^SH^69301164^VS^varying vec3 vPositionW; 
+varying vec2 vUv0;
+
+
+
+attribute vec3 vertex_position;
+attribute vec3 vertex_normal;
+attribute vec4 vertex_tangent;
+attribute vec2 vertex_texCoord0;
+attribute vec2 vertex_texCoord1;
+attribute vec4 vertex_color;
+uniform mat4 matrix_viewProjection;
+uniform mat4 matrix_model;
+uniform mat3 matrix_normal;
+vec3 dPositionW;
+mat4 dModelMatrix;
+mat3 dNormalMatrix;
+vec3 dLightPosW;
+vec3 dLightDirNormW;
+vec3 dNormalW;
+
+vec2 getUv0() {
+    return vertex_texCoord0;
+}
+mat4 getModelMatrix() {
+    return matrix_model;
+}
+vec4 getPosition() {
+    dModelMatrix = getModelMatrix();
+    vec4 posW = dModelMatrix * vec4(vertex_position, 1.0);
+    dPositionW = posW.xyz;
+    return matrix_viewProjection * posW;
+}
+vec3 getWorldPosition() {
+    return dPositionW;
+}
+
+
+void main(void) {
+    gl_Position = getPosition();
+   vPositionW    = getWorldPosition();
+   vec2 uv0 = getUv0();
+   vUv0 = uv0;
+}^PS^#extension GL_OES_standard_derivatives : enable
+
+precision highp float;
+
+varying vec3 vPositionW;
+varying vec2 vUv0;
+
+uniform vec3 view_position;
+uniform vec3 light_globalAmbient;
+float square(float x) {
+    return x*x;
+}
+float saturate(float x) {
+    return clamp(x, 0.0, 1.0);
+}
+vec3 saturate(vec3 x) {
+    return clamp(x, vec3(0.0), vec3(1.0));
+}
+vec4 dReflection;
+vec3 dAlbedo;
+vec3 dNormalW;
+vec3 dViewDirW;
+vec3 dDiffuseLight;
+vec3 dSpecularLight;
+vec3 dLightDirNormW;
+vec3 dSpecularity;
+float dGlossiness;
+float dAlpha;
+
+vec4 texture2DSRGB(sampler2D tex, vec2 uv) {
+    return texture2D(tex, uv);
+}
+vec4 textureCubeSRGB(samplerCube tex, vec3 uvw) {
+    return textureCube(tex, uvw);
+}
+vec3 gammaCorrectOutput(vec3 color) {
+    return color;
+}
+vec3 gammaCorrectInput(vec3 color) {
+    return color;
+}
+float gammaCorrectInput(float color) {
+    return color;
+}
+vec4 gammaCorrectInput(vec4 color) {
+    return color;
+}
+vec3 toneMap(vec3 color) {
+    return color;
+}
+vec3 addFog(vec3 color) {
+    return color;
+}
+uniform vec3 material_diffuse;
+void getAlbedo() {
+    dAlbedo = material_diffuse.rgb;
+}
+uniform sampler2D texture_opacityMap;
+void getOpacity() {
+    dAlpha = texture2D(texture_opacityMap, vUv0).a;
+}
+uniform sampler2D texture_emissiveMap;
+vec3 getEmission() {
+    return texture2DSRGB(texture_emissiveMap, vUv0).rgb;
+}
+float antiAliasGlossiness(float power) {
+    return power;
+}
+uniform vec3 material_specular;
+void getSpecularity() {
+    dSpecularity = material_specular;
+}
+uniform float material_shininess;
+void getGlossiness() {
+    dGlossiness = material_shininess + 0.0000001;
+}
+// Schlick's approximation
+uniform float material_fresnelFactor; // unused
+void getFresnel() {
+    float fresnel = 1.0 - max(dot(dNormalW, dViewDirW), 0.0);
+    float fresnel2 = fresnel * fresnel;
+    fresnel *= fresnel2 * fresnel2;
+    fresnel *= dGlossiness * dGlossiness;
+    dSpecularity = dSpecularity + (1.0 - dSpecularity) * fresnel;
+}
+// Energy-conserving (hopefully) Blinn-Phong
+float getLightSpecular() {
+    vec3 h = normalize( -dLightDirNormW + dViewDirW );
+    float nh = max( dot( h, dNormalW ), 0.0 );
+    float specPow = exp2(dGlossiness * 11.0); // glossiness is linear, power is not; 0 - 2048
+    specPow = antiAliasGlossiness(specPow);
+    // Hack: On Mac OS X, calling pow with zero for the exponent generates hideous artifacts so bias up a little
+    specPow = max(specPow, 0.0001);
+    return pow(nh, specPow) * (specPow + 2.0) / 8.0;
+}
+vec3 combineColor() {
+    return mix(dAlbedo * dDiffuseLight, dSpecularLight + dReflection.rgb * dReflection.a, dSpecularity);
+}
+
+void addAmbient() {
+    dDiffuseLight += light_globalAmbient;
+}
+
+void main(void) {
+    dDiffuseLight = vec3(0);
+    dSpecularLight = vec3(0);
+    dReflection = vec4(0);
+    dSpecularity = vec3(0);
+   getOpacity();
+   getAlbedo();
+   addAmbient();
+
+   gl_FragColor.rgb = combineColor();
+   gl_FragColor.rgb += getEmission();
+   gl_FragColor.rgb = addFog(gl_FragColor.rgb);
+   gl_FragColor.rgb = toneMap(gl_FragColor.rgb);
+   gl_FragColor.rgb = gammaCorrectOutput(gl_FragColor.rgb);
+gl_FragColor.a = dAlpha;
+
+}
+^AT^vertex_position,POSITION,vertex_texCoord0,TEXCOORD0,^SH^155666111^VS^varying vec3 vPositionW;
+varying vec2 vUv0;
+
+
+
+attribute vec3 vertex_position;
+attribute vec3 vertex_normal;
+attribute vec4 vertex_tangent;
+attribute vec2 vertex_texCoord0;
+attribute vec2 vertex_texCoord1;
+attribute vec4 vertex_color;
+uniform mat4 matrix_viewProjection;
+uniform mat4 matrix_model;
+uniform mat3 matrix_normal;
+vec3 dPositionW;
+mat4 dModelMatrix;
+mat3 dNormalMatrix;
+vec3 dLightPosW;
+vec3 dLightDirNormW;
+vec3 dNormalW;
+
+vec2 getUv0() {
+    return vertex_texCoord0;
+}
+mat4 getModelMatrix() {
+    return matrix_model;
+}
+vec4 getPosition() {
+    dModelMatrix = getModelMatrix();
+    vec4 posW = dModelMatrix * vec4(vertex_position, 1.0);
+    dPositionW = posW.xyz;
+    return matrix_viewProjection * posW;
+}
+vec3 getWorldPosition() {
+    return dPositionW;
+}
+
+
+void main(void) {
+    gl_Position = getPosition();
+   vPositionW    = getWorldPosition();
+   vec2 uv0 = getUv0();
+   vUv0 = uv0;
+}^PS^#extension GL_OES_standard_derivatives : enable
+
+precision highp float;
+
+varying vec3 vPositionW;
+varying vec2 vUv0;
+
+uniform vec3 view_position;
+uniform vec3 light_globalAmbient;
+float square(float x) {
+    return x*x;
+}
+float saturate(float x) {
+    return clamp(x, 0.0, 1.0);
+}
+vec3 saturate(vec3 x) {
+    return clamp(x, vec3(0.0), vec3(1.0));
+}
+vec4 dReflection;
+vec3 dAlbedo;
+vec3 dNormalW;
+vec3 dViewDirW;
+vec3 dDiffuseLight;
+vec3 dSpecularLight;
+vec3 dLightDirNormW;
+vec3 dSpecularity;
+float dGlossiness;
+float dAlpha;
+
+vec4 texture2DSRGB(sampler2D tex, vec2 uv) {
+    return texture2D(tex, uv);
+}
+vec4 textureCubeSRGB(samplerCube tex, vec3 uvw) {
+    return textureCube(tex, uvw);
+}
+vec3 gammaCorrectOutput(vec3 color) {
+    return color;
+}
+vec3 gammaCorrectInput(vec3 color) {
+    return color;
+}
+float gammaCorrectInput(float color) {
+    return color;
+}
+vec4 gammaCorrectInput(vec4 color) {
+    return color;
+}
+vec3 toneMap(vec3 color) {
+    return color;
+}
+vec3 addFog(vec3 color) {
+    return color;
+}
+uniform vec3 material_diffuse;
+void getAlbedo() {
+    dAlbedo = material_diffuse.rgb;
+}
+uniform sampler2D texture_opacityMap;
+uniform float material_opacity;
+void getOpacity() {
+    dAlpha = texture2D(texture_opacityMap, vUv0).a * material_opacity;
+}
+uniform sampler2D texture_emissiveMap;
+vec3 getEmission() {
+    return texture2DSRGB(texture_emissiveMap, vUv0).rgb;
+}
+float antiAliasGlossiness(float power) {
+    return power;
+}
+uniform vec3 material_specular;
+void getSpecularity() {
+    dSpecularity = material_specular;
+}
+uniform float material_shininess;
+void getGlossiness() {
+    dGlossiness = material_shininess + 0.0000001;
+}
+// Schlick's approximation
+uniform float material_fresnelFactor; // unused
+void getFresnel() {
+    float fresnel = 1.0 - max(dot(dNormalW, dViewDirW), 0.0);
+    float fresnel2 = fresnel * fresnel;
+    fresnel *= fresnel2 * fresnel2;
+    fresnel *= dGlossiness * dGlossiness;
+    dSpecularity = dSpecularity + (1.0 - dSpecularity) * fresnel;
+}
+// Energy-conserving (hopefully) Blinn-Phong
+float getLightSpecular() {
+    vec3 h = normalize( -dLightDirNormW + dViewDirW );
+    float nh = max( dot( h, dNormalW ), 0.0 );
+    float specPow = exp2(dGlossiness * 11.0); // glossiness is linear, power is not; 0 - 2048
+    specPow = antiAliasGlossiness(specPow);
+    // Hack: On Mac OS X, calling pow with zero for the exponent generates hideous artifacts so bias up a little
+    specPow = max(specPow, 0.0001);
+    return pow(nh, specPow) * (specPow + 2.0) / 8.0;
+}
+vec3 combineColor() {
+    return mix(dAlbedo * dDiffuseLight, dSpecularLight + dReflection.rgb * dReflection.a, dSpecularity);
+}
+
+void addAmbient() {
+    dDiffuseLight += light_globalAmbient;
+}
+
+void main(void) {
+    dDiffuseLight = vec3(0);
+    dSpecularLight = vec3(0);
+    dReflection = vec4(0);
+    dSpecularity = vec3(0);
+   getOpacity();
+   getAlbedo();
+   addAmbient();
+
+   gl_FragColor.rgb = combineColor();
+   gl_FragColor.rgb += getEmission();
+   gl_FragColor.rgb = addFog(gl_FragColor.rgb);
+   gl_FragColor.rgb = toneMap(gl_FragColor.rgb);
+   gl_FragColor.rgb = gammaCorrectOutput(gl_FragColor.rgb);
+gl_FragColor.a = dAlpha;
+
+}
+^AT^vertex_position,POSITION,vertex_texCoord0,TEXCOORD0,^SH^264347715^VS^varying vec3 vPositionW;
+varying vec2 vUv0;
+
+
+
+attribute vec3 vertex_position;
+attribute vec3 vertex_normal;
+attribute vec4 vertex_tangent;
+attribute vec2 vertex_texCoord0;
+attribute vec2 vertex_texCoord1;
+attribute vec4 vertex_color;
+uniform mat4 matrix_viewProjection;
+uniform mat4 matrix_model;
+uniform mat3 matrix_normal;
+vec3 dPositionW;
+mat4 dModelMatrix;
+mat3 dNormalMatrix;
+vec3 dLightPosW;
+vec3 dLightDirNormW;
+vec3 dNormalW;
+
+vec2 getUv0() {
+    return vertex_texCoord0;
+}
+mat4 getModelMatrix() {
+    return matrix_model;
+}
+vec4 getPosition() {
+    dModelMatrix = getModelMatrix();
+    vec4 posW = dModelMatrix * vec4(vertex_position, 1.0);
+    dPositionW = posW.xyz;
+    return matrix_viewProjection * posW;
+}
+vec3 getWorldPosition() {
+    return dPositionW;
+}
+
+
+void main(void) {
+    gl_Position = getPosition();
+   vPositionW    = getWorldPosition();
+   vec2 uv0 = getUv0();
+   vUv0 = uv0;
+}^PS^#extension GL_OES_standard_derivatives : enable
+
+precision highp float;
+
+varying vec3 vPositionW;
+varying vec2 vUv0;
+
+uniform vec3 view_position;
+uniform vec3 light_globalAmbient;
+float square(float x) {
+    return x*x;
+}
+float saturate(float x) {
+    return clamp(x, 0.0, 1.0);
+}
+vec3 saturate(vec3 x) {
+    return clamp(x, vec3(0.0), vec3(1.0));
+}
+vec4 dReflection;
+vec3 dAlbedo;
+vec3 dNormalW;
+vec3 dViewDirW;
+vec3 dDiffuseLight;
+vec3 dSpecularLight;
+vec3 dLightDirNormW;
+vec3 dSpecularity;
+float dGlossiness;
+float dAlpha;
+
+vec3 gammaCorrectInput(vec3 color) {
+    return pow(color, vec3(2.2));
+}
+float gammaCorrectInput(float color) {
+    return pow(color, 2.2);
+}
+vec4 gammaCorrectInput(vec4 color) {
+    return vec4(pow(color.rgb, vec3(2.2)), color.a);
+}
+vec4 texture2DSRGB(sampler2D tex, vec2 uv) {
+    vec4 rgba = texture2D(tex, uv);
+    rgba.rgb = gammaCorrectInput(rgba.rgb);
+    return rgba;
+}
+vec4 textureCubeSRGB(samplerCube tex, vec3 uvw) {
+    vec4 rgba = textureCube(tex, uvw);
+    rgba.rgb = gammaCorrectInput(rgba.rgb);
+    return rgba;
+}
+vec3 gammaCorrectOutput(vec3 color) {
+    color += vec3(0.0000001);
+    return pow(color, vec3(0.45));
+}
+uniform float exposure;
+vec3 toneMap(vec3 color) {
+    return color * exposure;
+}
+vec3 addFog(vec3 color) {
+    return color;
+}
+uniform sampler2D texture_diffuseMap;
+void getAlbedo() {
+    dAlbedo = texture2DSRGB(texture_diffuseMap, vUv0).rgb;
+}
+uniform sampler2D texture_opacityMap;
+void getOpacity() {
+    dAlpha = texture2D(texture_opacityMap, vUv0).a;
+}
+uniform sampler2D texture_emissiveMap;
+vec3 getEmission() {
+    return texture2DSRGB(texture_emissiveMap, vUv0).rgb;
+}
+float antiAliasGlossiness(float power) {
+    return power;
+}
+uniform vec3 material_specular;
+void getSpecularity() {
+    dSpecularity = material_specular;
+}
+uniform float material_shininess;
+void getGlossiness() {
+    dGlossiness = material_shininess + 0.0000001;
+}
+// Schlick's approximation
+uniform float material_fresnelFactor; // unused
+void getFresnel() {
+    float fresnel = 1.0 - max(dot(dNormalW, dViewDirW), 0.0);
+    float fresnel2 = fresnel * fresnel;
+    fresnel *= fresnel2 * fresnel2;
+    fresnel *= dGlossiness * dGlossiness;
+    dSpecularity = dSpecularity + (1.0 - dSpecularity) * fresnel;
+}
+// Energy-conserving (hopefully) Blinn-Phong
+float getLightSpecular() {
+    vec3 h = normalize( -dLightDirNormW + dViewDirW );
+    float nh = max( dot( h, dNormalW ), 0.0 );
+    float specPow = exp2(dGlossiness * 11.0); // glossiness is linear, power is not; 0 - 2048
+    specPow = antiAliasGlossiness(specPow);
+    // Hack: On Mac OS X, calling pow with zero for the exponent generates hideous artifacts so bias up a little
+    specPow = max(specPow, 0.0001);
+    return pow(nh, specPow) * (specPow + 2.0) / 8.0;
+}
+vec3 combineColor() {
+    return mix(dAlbedo * dDiffuseLight, dSpecularLight + dReflection.rgb * dReflection.a, dSpecularity);
+}
+
+void addAmbient() {
+    dDiffuseLight += light_globalAmbient;
+}
+
+void main(void) {
+    dDiffuseLight = vec3(0);
+    dSpecularLight = vec3(0);
+    dReflection = vec4(0);
+    dSpecularity = vec3(0);
+   getOpacity();
+   getAlbedo();
+   addAmbient();
+
+   gl_FragColor.rgb = combineColor();
+   gl_FragColor.rgb += getEmission();
+   gl_FragColor.rgb = addFog(gl_FragColor.rgb);
+   gl_FragColor.rgb = toneMap(gl_FragColor.rgb);
+   gl_FragColor.rgb = gammaCorrectOutput(gl_FragColor.rgb);
+gl_FragColor.a = dAlpha;
+
+}
+^AT^vertex_position,POSITION,vertex_texCoord0,TEXCOORD0,^SH^283629546^VS^varying vec3 vPositionW;
+varying vec2 vUv0;
+
+
+
+attribute vec3 vertex_position;
+attribute vec3 vertex_normal;
+attribute vec4 vertex_tangent;
+attribute vec2 vertex_texCoord0;
+attribute vec2 vertex_texCoord1;
+attribute vec4 vertex_color;
+uniform mat4 matrix_viewProjection;
+uniform mat4 matrix_model;
+uniform mat3 matrix_normal;
+vec3 dPositionW;
+mat4 dModelMatrix;
+mat3 dNormalMatrix;
+vec3 dLightPosW;
+vec3 dLightDirNormW;
+vec3 dNormalW;
+
+vec2 getUv0() {
+    return vertex_texCoord0;
+}
+mat4 getModelMatrix() {
+    return matrix_model;
+}
+vec4 getPosition() {
+    dModelMatrix = getModelMatrix();
+    vec4 posW = dModelMatrix * vec4(vertex_position, 1.0);
+    dPositionW = posW.xyz;
+    return matrix_viewProjection * posW;
+}
+vec3 getWorldPosition() {
+    return dPositionW;
+}
+
+
+void main(void) {
+    gl_Position = getPosition();
+   vPositionW    = getWorldPosition();
+   vec2 uv0 = getUv0();
+   vUv0 = uv0;
+}^PS^#extension GL_OES_standard_derivatives : enable
+
+precision highp float;
+
+varying vec3 vPositionW;
+varying vec2 vUv0;
+
+uniform vec3 view_position;
+uniform vec3 light_globalAmbient;
+float square(float x) {
+    return x*x;
+}
+float saturate(float x) {
+    return clamp(x, 0.0, 1.0);
+}
+vec3 saturate(vec3 x) {
+    return clamp(x, vec3(0.0), vec3(1.0));
+}
+vec4 dReflection;
+vec3 dAlbedo;
+vec3 dNormalW;
+vec3 dViewDirW;
+vec3 dDiffuseLight;
+vec3 dSpecularLight;
+vec3 dLightDirNormW;
+vec3 dSpecularity;
+float dGlossiness;
+float dAlpha;
+
+vec4 texture2DSRGB(sampler2D tex, vec2 uv) {
+    return texture2D(tex, uv);
+}
+vec4 textureCubeSRGB(samplerCube tex, vec3 uvw) {
+    return textureCube(tex, uvw);
+}
+vec3 gammaCorrectOutput(vec3 color) {
+    return color;
+}
+vec3 gammaCorrectInput(vec3 color) {
+    return color;
+}
+float gammaCorrectInput(float color) {
+    return color;
+}
+vec4 gammaCorrectInput(vec4 color) {
+    return color;
+}
+vec3 toneMap(vec3 color) {
+    return color;
+}
+vec3 addFog(vec3 color) {
+    return color;
+}
+uniform vec3 material_diffuse;
+void getAlbedo() {
+    dAlbedo = material_diffuse.rgb;
+}
+uniform sampler2D texture_emissiveMap;
+vec3 getEmission() {
+    return texture2DSRGB(texture_emissiveMap, vUv0).rgb;
+}
+float antiAliasGlossiness(float power) {
+    return power;
+}
+uniform vec3 material_specular;
+void getSpecularity() {
+    dSpecularity = material_specular;
+}
+uniform float material_shininess;
+void getGlossiness() {
+    dGlossiness = material_shininess + 0.0000001;
+}
+// Schlick's approximation
+uniform float material_fresnelFactor; // unused
+void getFresnel() {
+    float fresnel = 1.0 - max(dot(dNormalW, dViewDirW), 0.0);
+    float fresnel2 = fresnel * fresnel;
+    fresnel *= fresnel2 * fresnel2;
+    fresnel *= dGlossiness * dGlossiness;
+    dSpecularity = dSpecularity + (1.0 - dSpecularity) * fresnel;
+}
+// Energy-conserving (hopefully) Blinn-Phong
+float getLightSpecular() {
+    vec3 h = normalize( -dLightDirNormW + dViewDirW );
+    float nh = max( dot( h, dNormalW ), 0.0 );
+    float specPow = exp2(dGlossiness * 11.0); // glossiness is linear, power is not; 0 - 2048
+    specPow = antiAliasGlossiness(specPow);
+    // Hack: On Mac OS X, calling pow with zero for the exponent generates hideous artifacts so bias up a little
+    specPow = max(specPow, 0.0001);
+    return pow(nh, specPow) * (specPow + 2.0) / 8.0;
+}
+vec3 combineColor() {
+    return mix(dAlbedo * dDiffuseLight, dSpecularLight + dReflection.rgb * dReflection.a, dSpecularity);
+}
+
+void addAmbient() {
+    dDiffuseLight += light_globalAmbient;
+}
+
+void main(void) {
+    dDiffuseLight = vec3(0);
+    dSpecularLight = vec3(0);
+    dReflection = vec4(0);
+    dSpecularity = vec3(0);
+   dAlpha = 1.0;
+   getAlbedo();
+   addAmbient();
+
+   gl_FragColor.rgb = combineColor();
+   gl_FragColor.rgb += getEmission();
+   gl_FragColor.rgb = addFog(gl_FragColor.rgb);
+   gl_FragColor.rgb = toneMap(gl_FragColor.rgb);
+   gl_FragColor.rgb = gammaCorrectOutput(gl_FragColor.rgb);
+gl_FragColor.a = 1.0;
+
+}
+^AT^vertex_position,POSITION,vertex_texCoord0,TEXCOORD0,^SH^596843882^VS^varying vec3 vPositionW;
+varying vec2 vUv0;
+
+
+
+attribute vec3 vertex_position;
+attribute vec3 vertex_normal;
+attribute vec4 vertex_tangent;
+attribute vec2 vertex_texCoord0;
+attribute vec2 vertex_texCoord1;
+attribute vec4 vertex_color;
+uniform mat4 matrix_viewProjection;
+uniform mat4 matrix_model;
+uniform mat3 matrix_normal;
+vec3 dPositionW;
+mat4 dModelMatrix;
+mat3 dNormalMatrix;
+vec3 dLightPosW;
+vec3 dLightDirNormW;
+vec3 dNormalW;
+
+vec2 getUv0() {
+    return vertex_texCoord0;
+}
+mat4 getModelMatrix() {
+    return matrix_model;
+}
+vec4 getPosition() {
+    dModelMatrix = getModelMatrix();
+    vec4 posW = dModelMatrix * vec4(vertex_position, 1.0);
+    dPositionW = posW.xyz;
+    return matrix_viewProjection * posW;
+}
+vec3 getWorldPosition() {
+    return dPositionW;
+}
+
+
+void main(void) {
+    gl_Position = getPosition();
+   vPositionW    = getWorldPosition();
+   vec2 uv0 = getUv0();
+   vUv0 = uv0;
+}^PS^#extension GL_OES_standard_derivatives : enable
+
+precision highp float;
+
+varying vec3 vPositionW;
+varying vec2 vUv0;
+
+uniform vec3 view_position;
+uniform vec3 light_globalAmbient;
+float square(float x) {
+    return x*x;
+}
+float saturate(float x) {
+    return clamp(x, 0.0, 1.0);
+}
+vec3 saturate(vec3 x) {
+    return clamp(x, vec3(0.0), vec3(1.0));
+}
+vec4 dReflection;
+vec3 dAlbedo;
+vec3 dNormalW;
+vec3 dViewDirW;
+vec3 dDiffuseLight;
+vec3 dSpecularLight;
+vec3 dLightDirNormW;
+vec3 dSpecularity;
+float dGlossiness;
+float dAlpha;
+
+vec4 texture2DSRGB(sampler2D tex, vec2 uv) {
+    return texture2D(tex, uv);
+}
+vec4 textureCubeSRGB(samplerCube tex, vec3 uvw) {
+    return textureCube(tex, uvw);
+}
+vec3 gammaCorrectOutput(vec3 color) {
+    return color;
+}
+vec3 gammaCorrectInput(vec3 color) {
+    return color;
+}
+float gammaCorrectInput(float color) {
+    return color;
+}
+vec4 gammaCorrectInput(vec4 color) {
+    return color;
+}
+vec3 toneMap(vec3 color) {
+    return color;
+}
+vec3 addFog(vec3 color) {
+    return color;
+}
+uniform vec3 material_diffuse;
+void getAlbedo() {
+    dAlbedo = material_diffuse.rgb;
+}
+uniform sampler2D texture_opacityMap;
+void getOpacity() {
+    dAlpha = texture2D(texture_opacityMap, vUv0).a;
+}
+uniform sampler2D texture_emissiveMap;
+vec3 getEmission() {
+    return texture2DSRGB(texture_emissiveMap, vUv0).rgb;
+}
+float antiAliasGlossiness(float power) {
+    return power;
+}
+uniform vec3 material_specular;
+void getSpecularity() {
+    dSpecularity = material_specular;
+}
+uniform float material_shininess;
+void getGlossiness() {
+    dGlossiness = material_shininess + 0.0000001;
+}
+// Schlick's approximation
+uniform float material_fresnelFactor; // unused
+void getFresnel() {
+    float fresnel = 1.0 - max(dot(dNormalW, dViewDirW), 0.0);
+    float fresnel2 = fresnel * fresnel;
+    fresnel *= fresnel2 * fresnel2;
+    fresnel *= dGlossiness * dGlossiness;
+    dSpecularity = dSpecularity + (1.0 - dSpecularity) * fresnel;
+}
+// Energy-conserving (hopefully) Blinn-Phong
+float getLightSpecular() {
+    vec3 h = normalize( -dLightDirNormW + dViewDirW );
+    float nh = max( dot( h, dNormalW ), 0.0 );
+    float specPow = exp2(dGlossiness * 11.0); // glossiness is linear, power is not; 0 - 2048
+    specPow = antiAliasGlossiness(specPow);
+    // Hack: On Mac OS X, calling pow with zero for the exponent generates hideous artifacts so bias up a little
+    specPow = max(specPow, 0.0001);
+    return pow(nh, specPow) * (specPow + 2.0) / 8.0;
+}
+vec3 combineColor() {
+    return mix(dAlbedo * dDiffuseLight, dSpecularLight + dReflection.rgb * dReflection.a, dSpecularity);
+}
+
+void addAmbient() {
+    dDiffuseLight += light_globalAmbient;
+}
+uniform float alpha_ref;
+void alphaTest(float a) {
+    if (a < alpha_ref) discard;
+}
+
+void main(void) {
+    dDiffuseLight = vec3(0);
+    dSpecularLight = vec3(0);
+    dReflection = vec4(0);
+    dSpecularity = vec3(0);
+   getOpacity();
+   alphaTest(dAlpha);
+   getAlbedo();
+   addAmbient();
+
+   gl_FragColor.rgb = combineColor();
+   gl_FragColor.rgb += getEmission();
+   gl_FragColor.rgb = addFog(gl_FragColor.rgb);
+   gl_FragColor.rgb = toneMap(gl_FragColor.rgb);
+   gl_FragColor.rgb = gammaCorrectOutput(gl_FragColor.rgb);
+gl_FragColor.a = dAlpha;
+
+}
+^AT^vertex_position,POSITION,vertex_texCoord0,TEXCOORD0,^SH^608442304^VS^varying vec3 vPositionW;
+varying vec2 vUv0;
+
+
+
+attribute vec3 vertex_position;
+attribute vec3 vertex_normal;
+attribute vec4 vertex_tangent;
+attribute vec2 vertex_texCoord0;
+attribute vec2 vertex_texCoord1;
+attribute vec4 vertex_color;
+uniform mat4 matrix_viewProjection;
+uniform mat4 matrix_model;
+uniform mat3 matrix_normal;
+vec3 dPositionW;
+mat4 dModelMatrix;
+mat3 dNormalMatrix;
+vec3 dLightPosW;
+vec3 dLightDirNormW;
+vec3 dNormalW;
+
+vec2 getUv0() {
+    return vertex_texCoord0;
+}
+mat4 getModelMatrix() {
+    return matrix_model;
+}
+vec4 getPosition() {
+    dModelMatrix = getModelMatrix();
+    vec4 posW = dModelMatrix * vec4(vertex_position, 1.0);
+    dPositionW = posW.xyz;
+    return matrix_viewProjection * posW;
+}
+vec3 getWorldPosition() {
+    return dPositionW;
+}
+
+
+void main(void) {
+    gl_Position = getPosition();
+   vPositionW    = getWorldPosition();
+   vec2 uv0 = getUv0();
+   vUv0 = uv0;
+}^PS^#extension GL_OES_standard_derivatives : enable
+
+precision highp float;
+
+varying vec3 vPositionW;
+varying vec2 vUv0;
+
+uniform vec3 view_position;
+uniform vec3 light_globalAmbient;
+float square(float x) {
+    return x*x;
+}
+float saturate(float x) {
+    return clamp(x, 0.0, 1.0);
+}
+vec3 saturate(vec3 x) {
+    return clamp(x, vec3(0.0), vec3(1.0));
+}
+vec4 dReflection;
+vec3 dAlbedo;
+vec3 dDiffuseLight;
+vec3 dSpecularLight;
+vec3 dSpecularity;
+float dAlpha;
+
+vec3 gammaCorrectInput(vec3 color) {
+    return pow(color, vec3(2.2));
+}
+float gammaCorrectInput(float color) {
+    return pow(color, 2.2);
+}
+vec4 gammaCorrectInput(vec4 color) {
+    return vec4(pow(color.rgb, vec3(2.2)), color.a);
+}
+vec4 texture2DSRGB(sampler2D tex, vec2 uv) {
+    vec4 rgba = texture2D(tex, uv);
+    rgba.rgb = gammaCorrectInput(rgba.rgb);
+    return rgba;
+}
+vec4 textureCubeSRGB(samplerCube tex, vec3 uvw) {
+    vec4 rgba = textureCube(tex, uvw);
+    rgba.rgb = gammaCorrectInput(rgba.rgb);
+    return rgba;
+}
+vec3 gammaCorrectOutput(vec3 color) {
+    color += vec3(0.0000001);
+    return pow(color, vec3(0.45));
+}
+uniform float exposure;
+vec3 toneMap(vec3 color) {
+    return color * exposure;
+}
+vec3 addFog(vec3 color) {
+    return color;
+}
+uniform vec3 material_diffuse;
+void getAlbedo() {
+    dAlbedo = material_diffuse.rgb;
+}
+uniform sampler2D texture_opacityMap;
+void getOpacity() {
+    dAlpha = texture2D(texture_opacityMap, vUv0).a;
+}
+uniform sampler2D texture_emissiveMap;
+vec3 getEmission() {
+    return texture2DSRGB(texture_emissiveMap, vUv0).rgb;
+}
+vec3 combineColor() {
+    return dAlbedo * dDiffuseLight;
+}
+
+void addAmbient() {
+    dDiffuseLight += light_globalAmbient;
+}
+
+void main(void) {
+    dDiffuseLight = vec3(0);
+    dSpecularLight = vec3(0);
+    dReflection = vec4(0);
+    dSpecularity = vec3(0);
+   getOpacity();
+   getAlbedo();
+   addAmbient();
+
+   gl_FragColor.rgb = combineColor();
+   gl_FragColor.rgb += getEmission();
+   gl_FragColor.rgb = addFog(gl_FragColor.rgb);
+   gl_FragColor.rgb = toneMap(gl_FragColor.rgb);
+   gl_FragColor.rgb = gammaCorrectOutput(gl_FragColor.rgb);
+gl_FragColor.a = dAlpha;
+
+}
+^AT^vertex_position,POSITION,vertex_texCoord0,TEXCOORD0,^SH^839023939^VS^varying vec3 vPositionW;
+varying vec2 vUv0;
+
+
+
+attribute vec3 vertex_position;
+attribute vec3 vertex_normal;
+attribute vec4 vertex_tangent;
+attribute vec2 vertex_texCoord0;
+attribute vec2 vertex_texCoord1;
+attribute vec4 vertex_color;
+uniform mat4 matrix_viewProjection;
+uniform mat4 matrix_model;
+uniform mat3 matrix_normal;
+vec3 dPositionW;
+mat4 dModelMatrix;
+mat3 dNormalMatrix;
+vec3 dLightPosW;
+vec3 dLightDirNormW;
+vec3 dNormalW;
+
+vec2 getUv0() {
+    return vertex_texCoord0;
+}
+mat4 getModelMatrix() {
+    return matrix_model;
+}
+vec4 getPosition() {
+    dModelMatrix = getModelMatrix();
+    vec4 posW = dModelMatrix * vec4(vertex_position, 1.0);
+    dPositionW = posW.xyz;
+    return matrix_viewProjection * posW;
+}
+vec3 getWorldPosition() {
+    return dPositionW;
+}
+
+
+void main(void) {
+    gl_Position = getPosition();
+   vPositionW    = getWorldPosition();
+   vec2 uv0 = getUv0();
+   vUv0 = uv0;
+}^PS^#extension GL_OES_standard_derivatives : enable
+
+precision highp float;
+
+varying vec3 vPositionW;
+varying vec2 vUv0;
+
+uniform vec3 view_position;
+uniform vec3 light_globalAmbient;
+float square(float x) {
+    return x*x;
+}
+float saturate(float x) {
+    return clamp(x, 0.0, 1.0);
+}
+vec3 saturate(vec3 x) {
+    return clamp(x, vec3(0.0), vec3(1.0));
+}
+vec4 dReflection;
+vec3 dAlbedo;
+vec3 dNormalW;
+vec3 dViewDirW;
+vec3 dDiffuseLight;
+vec3 dSpecularLight;
+vec3 dLightDirNormW;
+vec3 dSpecularity;
+float dGlossiness;
+float dAlpha;
+
+vec4 texture2DSRGB(sampler2D tex, vec2 uv) {
+    return texture2D(tex, uv);
+}
+vec4 textureCubeSRGB(samplerCube tex, vec3 uvw) {
+    return textureCube(tex, uvw);
+}
+vec3 gammaCorrectOutput(vec3 color) {
+    return color;
+}
+vec3 gammaCorrectInput(vec3 color) {
+    return color;
+}
+float gammaCorrectInput(float color) {
+    return color;
+}
+vec4 gammaCorrectInput(vec4 color) {
+    return color;
+}
+vec3 toneMap(vec3 color) {
+    return color;
+}
+vec3 addFog(vec3 color) {
+    return color;
+}
+uniform vec3 material_diffuse;
+void getAlbedo() {
+    dAlbedo = material_diffuse.rgb;
+}
+uniform sampler2D texture_opacityMap;
+uniform float material_opacity;
+void getOpacity() {
+    dAlpha = texture2D(texture_opacityMap, vUv0).a * material_opacity;
+}
+uniform sampler2D texture_emissiveMap;
+vec3 getEmission() {
+    return texture2DSRGB(texture_emissiveMap, vUv0).rgb;
+}
+float antiAliasGlossiness(float power) {
+    return power;
+}
+uniform vec3 material_specular;
+void getSpecularity() {
+    dSpecularity = material_specular;
+}
+uniform float material_shininess;
+void getGlossiness() {
+    dGlossiness = material_shininess + 0.0000001;
+}
+// Schlick's approximation
+uniform float material_fresnelFactor; // unused
+void getFresnel() {
+    float fresnel = 1.0 - max(dot(dNormalW, dViewDirW), 0.0);
+    float fresnel2 = fresnel * fresnel;
+    fresnel *= fresnel2 * fresnel2;
+    fresnel *= dGlossiness * dGlossiness;
+    dSpecularity = dSpecularity + (1.0 - dSpecularity) * fresnel;
+}
+// Energy-conserving (hopefully) Blinn-Phong
+float getLightSpecular() {
+    vec3 h = normalize( -dLightDirNormW + dViewDirW );
+    float nh = max( dot( h, dNormalW ), 0.0 );
+    float specPow = exp2(dGlossiness * 11.0); // glossiness is linear, power is not; 0 - 2048
+    specPow = antiAliasGlossiness(specPow);
+    // Hack: On Mac OS X, calling pow with zero for the exponent generates hideous artifacts so bias up a little
+    specPow = max(specPow, 0.0001);
+    return pow(nh, specPow) * (specPow + 2.0) / 8.0;
+}
+vec3 combineColor() {
+    return mix(dAlbedo * dDiffuseLight, dSpecularLight + dReflection.rgb * dReflection.a, dSpecularity);
+}
+
+void addAmbient() {
+    dDiffuseLight += light_globalAmbient;
+}
+
+void main(void) {
+    dDiffuseLight = vec3(0);
+    dSpecularLight = vec3(0);
+    dReflection = vec4(0);
+    dSpecularity = vec3(0);
+   getOpacity();
+   getAlbedo();
+   addAmbient();
+
+   gl_FragColor.rgb = combineColor();
+   gl_FragColor.rgb += getEmission();
+   gl_FragColor.rgb = addFog(gl_FragColor.rgb);
+   gl_FragColor.rgb = toneMap(gl_FragColor.rgb);
+   gl_FragColor.rgb = gammaCorrectOutput(gl_FragColor.rgb);
+gl_FragColor.a = dAlpha;
+
+}
+^AT^vertex_position,POSITION,vertex_texCoord0,TEXCOORD0,^SH^877113143^VS^varying vec3 vPositionW;
+varying vec2 vUv0;
+
+
+
+attribute vec3 vertex_position;
+attribute vec3 vertex_normal;
+attribute vec4 vertex_tangent;
+attribute vec2 vertex_texCoord0;
+attribute vec2 vertex_texCoord1;
+attribute vec4 vertex_color;
+uniform mat4 matrix_viewProjection;
+uniform mat4 matrix_model;
+uniform mat3 matrix_normal;
+vec3 dPositionW;
+mat4 dModelMatrix;
+mat3 dNormalMatrix;
+vec3 dLightPosW;
+vec3 dLightDirNormW;
+vec3 dNormalW;
+
+vec2 getUv0() {
+    return vertex_texCoord0;
+}
+mat4 getModelMatrix() {
+    return matrix_model;
+}
+vec4 getPosition() {
+    dModelMatrix = getModelMatrix();
+    vec4 posW = dModelMatrix * vec4(vertex_position, 1.0);
+    dPositionW = posW.xyz;
+    return matrix_viewProjection * posW;
+}
+vec3 getWorldPosition() {
+    return dPositionW;
+}
+
+
+void main(void) {
+    gl_Position = getPosition();
+   vPositionW    = getWorldPosition();
+   vec2 uv0 = getUv0();
+   vUv0 = uv0;
+}^PS^#extension GL_OES_standard_derivatives : enable
+
+precision highp float;
+
+varying vec3 vPositionW;
+varying vec2 vUv0;
+
+uniform vec3 view_position;
+uniform vec3 light_globalAmbient;
+float square(float x) {
+    return x*x;
+}
+float saturate(float x) {
+    return clamp(x, 0.0, 1.0);
+}
+vec3 saturate(vec3 x) {
+    return clamp(x, vec3(0.0), vec3(1.0));
+}
+vec4 dReflection;
+vec3 dAlbedo;
+vec3 dNormalW;
+vec3 dViewDirW;
+vec3 dDiffuseLight;
+vec3 dSpecularLight;
+vec3 dLightDirNormW;
+vec3 dSpecularity;
+float dGlossiness;
+float dAlpha;
+
+vec3 gammaCorrectInput(vec3 color) {
+    return pow(color, vec3(2.2));
+}
+float gammaCorrectInput(float color) {
+    return pow(color, 2.2);
+}
+vec4 gammaCorrectInput(vec4 color) {
+    return vec4(pow(color.rgb, vec3(2.2)), color.a);
+}
+vec4 texture2DSRGB(sampler2D tex, vec2 uv) {
+    vec4 rgba = texture2D(tex, uv);
+    rgba.rgb = gammaCorrectInput(rgba.rgb);
+    return rgba;
+}
+vec4 textureCubeSRGB(samplerCube tex, vec3 uvw) {
+    vec4 rgba = textureCube(tex, uvw);
+    rgba.rgb = gammaCorrectInput(rgba.rgb);
+    return rgba;
+}
+vec3 gammaCorrectOutput(vec3 color) {
+    color += vec3(0.0000001);
+    return pow(color, vec3(0.45));
+}
+uniform float exposure;
+vec3 toneMap(vec3 color) {
+    return color * exposure;
+}
+vec3 addFog(vec3 color) {
+    return color;
+}
+uniform sampler2D texture_diffuseMap;
+void getAlbedo() {
+    dAlbedo = texture2DSRGB(texture_diffuseMap, vUv0).rgb;
+}
+uniform sampler2D texture_opacityMap;
+void getOpacity() {
+    dAlpha = texture2D(texture_opacityMap, vUv0).a;
+}
+uniform sampler2D texture_emissiveMap;
+vec3 getEmission() {
+    return texture2DSRGB(texture_emissiveMap, vUv0).rgb;
+}
+float antiAliasGlossiness(float power) {
+    return power;
+}
+uniform vec3 material_specular;
+void getSpecularity() {
+    dSpecularity = material_specular;
+}
+uniform float material_shininess;
+void getGlossiness() {
+    dGlossiness = material_shininess + 0.0000001;
+}
+// Schlick's approximation
+uniform float material_fresnelFactor; // unused
+void getFresnel() {
+    float fresnel = 1.0 - max(dot(dNormalW, dViewDirW), 0.0);
+    float fresnel2 = fresnel * fresnel;
+    fresnel *= fresnel2 * fresnel2;
+    fresnel *= dGlossiness * dGlossiness;
+    dSpecularity = dSpecularity + (1.0 - dSpecularity) * fresnel;
+}
+// Energy-conserving (hopefully) Blinn-Phong
+float getLightSpecular() {
+    vec3 h = normalize( -dLightDirNormW + dViewDirW );
+    float nh = max( dot( h, dNormalW ), 0.0 );
+    float specPow = exp2(dGlossiness * 11.0); // glossiness is linear, power is not; 0 - 2048
+    specPow = antiAliasGlossiness(specPow);
+    // Hack: On Mac OS X, calling pow with zero for the exponent generates hideous artifacts so bias up a little
+    specPow = max(specPow, 0.0001);
+    return pow(nh, specPow) * (specPow + 2.0) / 8.0;
+}
+vec3 combineColor() {
+    return mix(dAlbedo * dDiffuseLight, dSpecularLight + dReflection.rgb * dReflection.a, dSpecularity);
+}
+
+void addAmbient() {
+    dDiffuseLight += light_globalAmbient;
+}
+
+void main(void) {
+    dDiffuseLight = vec3(0);
+    dSpecularLight = vec3(0);
+    dReflection = vec4(0);
+    dSpecularity = vec3(0);
+   getOpacity();
+   getAlbedo();
+   addAmbient();
+
+   gl_FragColor.rgb = combineColor();
+   gl_FragColor.rgb += getEmission();
+   gl_FragColor.rgb = addFog(gl_FragColor.rgb);
+   gl_FragColor.rgb = toneMap(gl_FragColor.rgb);
+   gl_FragColor.rgb = gammaCorrectOutput(gl_FragColor.rgb);
+gl_FragColor.a = dAlpha;
+
+}
+^AT^vertex_position,POSITION,vertex_texCoord0,TEXCOORD0,^SH^1093852065^VS^varying vec3 vPositionW;
+varying vec2 vUv0;
+
+
+
+attribute vec3 vertex_position;
+attribute vec3 vertex_normal;
+attribute vec4 vertex_tangent;
+attribute vec2 vertex_texCoord0;
+attribute vec2 vertex_texCoord1;
+attribute vec4 vertex_color;
+uniform mat4 matrix_viewProjection;
+uniform mat4 matrix_model;
+uniform mat3 matrix_normal;
+vec3 dPositionW;
+mat4 dModelMatrix;
+mat3 dNormalMatrix;
+vec3 dLightPosW;
+vec3 dLightDirNormW;
+vec3 dNormalW;
+
+vec2 getUv0() {
+    return vertex_texCoord0;
+}
+mat4 getModelMatrix() {
+    return matrix_model;
+}
+vec4 getPosition() {
+    dModelMatrix = getModelMatrix();
+    vec4 posW = dModelMatrix * vec4(vertex_position, 1.0);
+    dPositionW = posW.xyz;
+    return matrix_viewProjection * posW;
+}
+vec3 getWorldPosition() {
+    return dPositionW;
+}
+
+
+void main(void) {
+    gl_Position = getPosition();
+   vPositionW    = getWorldPosition();
+   vec2 uv0 = getUv0();
+   vUv0 = uv0;
+}^PS^#extension GL_OES_standard_derivatives : enable
+
+precision highp float;
+
+varying vec3 vPositionW;
+varying vec2 vUv0;
+
+uniform vec3 view_position;
+uniform vec3 light_globalAmbient;
+float square(float x) {
+    return x*x;
+}
+float saturate(float x) {
+    return clamp(x, 0.0, 1.0);
+}
+vec3 saturate(vec3 x) {
+    return clamp(x, vec3(0.0), vec3(1.0));
+}
+vec4 dReflection;
+vec3 dAlbedo;
+vec3 dDiffuseLight;
+vec3 dSpecularLight;
+vec3 dSpecularity;
+float dAlpha;
+
+vec4 texture2DSRGB(sampler2D tex, vec2 uv) {
+    return texture2D(tex, uv);
+}
+vec4 textureCubeSRGB(samplerCube tex, vec3 uvw) {
+    return textureCube(tex, uvw);
+}
+vec3 gammaCorrectOutput(vec3 color) {
+    return color;
+}
+vec3 gammaCorrectInput(vec3 color) {
+    return color;
+}
+float gammaCorrectInput(float color) {
+    return color;
+}
+vec4 gammaCorrectInput(vec4 color) {
+    return color;
+}
+vec3 toneMap(vec3 color) {
+    return color;
+}
+vec3 addFog(vec3 color) {
+    return color;
+}
+uniform vec3 material_diffuse;
+void getAlbedo() {
+    dAlbedo = material_diffuse.rgb;
+}
+uniform float material_opacity;
+void getOpacity() {
+    dAlpha = material_opacity;
+}
+uniform vec3 material_emissive;
+vec3 getEmission() {
+    return material_emissive;
+}
+vec3 combineColor() {
+    return dAlbedo * dDiffuseLight;
+}
+
+void addAmbient() {
+    dDiffuseLight += light_globalAmbient;
+}
+uniform sampler2D texture_msdfMap;
+float median(float r, float g, float b) {
+    return max(min(r, g), min(max(r, g), b));
+}
+vec4 applyMsdf(vec4 color) {
+    vec3 sample = texture2D(texture_msdfMap, vUv0).rgb;
+    float distance = median(sample.r, sample.g, sample.b) - 0.5;
+    vec4 msdf;
+    #ifdef GL_OES_standard_derivatives
+    vec4 background = vec4(0.0);
+    float opacity = clamp(distance/fwidth(distance) + 0.5, 0.0, 1.0);
+    msdf = mix(background, color, opacity);
+    if (msdf.a < 0.01) {
+        discard;
+    }
+    #else
+    msdf = color;
+    if (distance < 0.1) {
+        discard;
+    }
+    #endif
+    return msdf;
+}
+
+void main(void) {
+    dDiffuseLight = vec3(0);
+    dSpecularLight = vec3(0);
+    dReflection = vec4(0);
+    dSpecularity = vec3(0);
+   getOpacity();
+   getAlbedo();
+   addAmbient();
+
+   gl_FragColor.rgb = combineColor();
+   gl_FragColor.rgb += getEmission();
+   gl_FragColor.rgb = addFog(gl_FragColor.rgb);
+   gl_FragColor.rgb = toneMap(gl_FragColor.rgb);
+   gl_FragColor.rgb = gammaCorrectOutput(gl_FragColor.rgb);
+gl_FragColor.rgb *= dAlpha;
+gl_FragColor.a = dAlpha;
+   gl_FragColor = applyMsdf(gl_FragColor);
+
+}
+^AT^vertex_position,POSITION,vertex_texCoord0,TEXCOORD0,^SH^1245267184^VS^varying vec3 vPositionW;
+varying vec2 vUv0;
+
+
+
+attribute vec3 vertex_position;
+attribute vec3 vertex_normal;
+attribute vec4 vertex_tangent;
+attribute vec2 vertex_texCoord0;
+attribute vec2 vertex_texCoord1;
+attribute vec4 vertex_color;
+uniform mat4 matrix_viewProjection;
+uniform mat4 matrix_model;
+uniform mat3 matrix_normal;
+vec3 dPositionW;
+mat4 dModelMatrix;
+mat3 dNormalMatrix;
+vec3 dLightPosW;
+vec3 dLightDirNormW;
+vec3 dNormalW;
+
+vec2 getUv0() {
+    return vertex_texCoord0;
+}
+mat4 getModelMatrix() {
+    return matrix_model;
+}
+vec4 getPosition() {
+    dModelMatrix = getModelMatrix();
+    vec4 posW = dModelMatrix * vec4(vertex_position, 1.0);
+    dPositionW = posW.xyz;
+    return matrix_viewProjection * posW;
+}
+vec3 getWorldPosition() {
+    return dPositionW;
+}
+
+
+void main(void) {
+    gl_Position = getPosition();
+   vPositionW    = getWorldPosition();
+   vec2 uv0 = getUv0();
+   vUv0 = uv0;
+}^PS^#extension GL_OES_standard_derivatives : enable
+
+precision highp float;
+
+varying vec3 vPositionW;
+varying vec2 vUv0;
+
+uniform vec3 view_position;
+uniform vec3 light_globalAmbient;
+float square(float x) {
+    return x*x;
+}
+float saturate(float x) {
+    return clamp(x, 0.0, 1.0);
+}
+vec3 saturate(vec3 x) {
+    return clamp(x, vec3(0.0), vec3(1.0));
+}
+vec4 dReflection;
+vec3 dAlbedo;
+vec3 dNormalW;
+vec3 dViewDirW;
+vec3 dDiffuseLight;
+vec3 dSpecularLight;
+vec3 dLightDirNormW;
+vec3 dSpecularity;
+float dGlossiness;
+float dAlpha;
+
+vec4 texture2DSRGB(sampler2D tex, vec2 uv) {
+    return texture2D(tex, uv);
+}
+vec4 textureCubeSRGB(samplerCube tex, vec3 uvw) {
+    return textureCube(tex, uvw);
+}
+vec3 gammaCorrectOutput(vec3 color) {
+    return color;
+}
+vec3 gammaCorrectInput(vec3 color) {
+    return color;
+}
+float gammaCorrectInput(float color) {
+    return color;
+}
+vec4 gammaCorrectInput(vec4 color) {
+    return color;
+}
+vec3 toneMap(vec3 color) {
+    return color;
+}
+vec3 addFog(vec3 color) {
+    return color;
+}
+uniform vec3 material_diffuse;
+void getAlbedo() {
+    dAlbedo = material_diffuse.rgb;
+}
+uniform sampler2D texture_opacityMap;
+void getOpacity() {
+    dAlpha = texture2D(texture_opacityMap, vUv0).a;
+}
+uniform sampler2D texture_emissiveMap;
+vec3 getEmission() {
+    return texture2DSRGB(texture_emissiveMap, vUv0).rgb;
+}
+float antiAliasGlossiness(float power) {
+    return power;
+}
+uniform vec3 material_specular;
+void getSpecularity() {
+    dSpecularity = material_specular;
+}
+uniform float material_shininess;
+void getGlossiness() {
+    dGlossiness = material_shininess + 0.0000001;
+}
+// Schlick's approximation
+uniform float material_fresnelFactor; // unused
+void getFresnel() {
+    float fresnel = 1.0 - max(dot(dNormalW, dViewDirW), 0.0);
+    float fresnel2 = fresnel * fresnel;
+    fresnel *= fresnel2 * fresnel2;
+    fresnel *= dGlossiness * dGlossiness;
+    dSpecularity = dSpecularity + (1.0 - dSpecularity) * fresnel;
+}
+// Energy-conserving (hopefully) Blinn-Phong
+float getLightSpecular() {
+    vec3 h = normalize( -dLightDirNormW + dViewDirW );
+    float nh = max( dot( h, dNormalW ), 0.0 );
+    float specPow = exp2(dGlossiness * 11.0); // glossiness is linear, power is not; 0 - 2048
+    specPow = antiAliasGlossiness(specPow);
+    // Hack: On Mac OS X, calling pow with zero for the exponent generates hideous artifacts so bias up a little
+    specPow = max(specPow, 0.0001);
+    return pow(nh, specPow) * (specPow + 2.0) / 8.0;
+}
+vec3 combineColor() {
+    return mix(dAlbedo * dDiffuseLight, dSpecularLight + dReflection.rgb * dReflection.a, dSpecularity);
+}
+
+void addAmbient() {
+    dDiffuseLight += light_globalAmbient;
+}
+uniform float alpha_ref;
+void alphaTest(float a) {
+    if (a < alpha_ref) discard;
+}
+
+void main(void) {
+    dDiffuseLight = vec3(0);
+    dSpecularLight = vec3(0);
+    dReflection = vec4(0);
+    dSpecularity = vec3(0);
+   getOpacity();
+   alphaTest(dAlpha);
+   getAlbedo();
+   addAmbient();
+
+   gl_FragColor.rgb = combineColor();
+   gl_FragColor.rgb += getEmission();
+   gl_FragColor.rgb = addFog(gl_FragColor.rgb);
+   gl_FragColor.rgb = toneMap(gl_FragColor.rgb);
+   gl_FragColor.rgb = gammaCorrectOutput(gl_FragColor.rgb);
+gl_FragColor.a = dAlpha;
+
+}
+^AT^vertex_position,POSITION,vertex_texCoord0,TEXCOORD0,^SH^1323765914^VS^varying vec3 vPositionW;
+varying vec2 vUv0;
+
+
+
+attribute vec3 vertex_position;
+attribute vec3 vertex_normal;
+attribute vec4 vertex_tangent;
+attribute vec2 vertex_texCoord0;
+attribute vec2 vertex_texCoord1;
+attribute vec4 vertex_color;
+uniform mat4 matrix_viewProjection;
+uniform mat4 matrix_model;
+uniform mat3 matrix_normal;
+vec3 dPositionW;
+mat4 dModelMatrix;
+mat3 dNormalMatrix;
+vec3 dLightPosW;
+vec3 dLightDirNormW;
+vec3 dNormalW;
+
+vec2 getUv0() {
+    return vertex_texCoord0;
+}
+mat4 getModelMatrix() {
+    return matrix_model;
+}
+vec4 getPosition() {
+    dModelMatrix = getModelMatrix();
+    vec4 posW = dModelMatrix * vec4(vertex_position, 1.0);
+    dPositionW = posW.xyz;
+    return matrix_viewProjection * posW;
+}
+vec3 getWorldPosition() {
+    return dPositionW;
+}
+
+
+void main(void) {
+    gl_Position = getPosition();
+   vPositionW    = getWorldPosition();
+   vec2 uv0 = getUv0();
+   vUv0 = uv0;
+}^PS^#extension GL_OES_standard_derivatives : enable
+
+precision highp float;
+
+varying vec3 vPositionW;
+varying vec2 vUv0;
+
+uniform vec3 view_position;
+uniform vec3 light_globalAmbient;
+float square(float x) {
+    return x*x;
+}
+float saturate(float x) {
+    return clamp(x, 0.0, 1.0);
+}
+vec3 saturate(vec3 x) {
+    return clamp(x, vec3(0.0), vec3(1.0));
+}
+vec4 dReflection;
+vec3 dAlbedo;
+vec3 dDiffuseLight;
+vec3 dSpecularLight;
+vec3 dSpecularity;
+float dAlpha;
+
+vec3 gammaCorrectInput(vec3 color) {
+    return pow(color, vec3(2.2));
+}
+float gammaCorrectInput(float color) {
+    return pow(color, 2.2);
+}
+vec4 gammaCorrectInput(vec4 color) {
+    return vec4(pow(color.rgb, vec3(2.2)), color.a);
+}
+vec4 texture2DSRGB(sampler2D tex, vec2 uv) {
+    vec4 rgba = texture2D(tex, uv);
+    rgba.rgb = gammaCorrectInput(rgba.rgb);
+    return rgba;
+}
+vec4 textureCubeSRGB(samplerCube tex, vec3 uvw) {
+    vec4 rgba = textureCube(tex, uvw);
+    rgba.rgb = gammaCorrectInput(rgba.rgb);
+    return rgba;
+}
+vec3 gammaCorrectOutput(vec3 color) {
+    color += vec3(0.0000001);
+    return pow(color, vec3(0.45));
+}
+uniform float exposure;
+vec3 toneMap(vec3 color) {
+    return color * exposure;
+}
+vec3 addFog(vec3 color) {
+    return color;
+}
+uniform vec3 material_diffuse;
+void getAlbedo() {
+    dAlbedo = material_diffuse.rgb;
+}
+uniform sampler2D texture_opacityMap;
+void getOpacity() {
+    dAlpha = texture2D(texture_opacityMap, vUv0).a;
+}
+uniform sampler2D texture_emissiveMap;
+vec3 getEmission() {
+    return texture2DSRGB(texture_emissiveMap, vUv0).rgb;
+}
+vec3 combineColor() {
+    return dAlbedo * dDiffuseLight;
+}
+
+void addAmbient() {
+    dDiffuseLight += light_globalAmbient;
+}
+
+void main(void) {
+    dDiffuseLight = vec3(0);
+    dSpecularLight = vec3(0);
+    dReflection = vec4(0);
+    dSpecularity = vec3(0);
+   getOpacity();
+   getAlbedo();
+   addAmbient();
+
+   gl_FragColor.rgb = combineColor();
+   gl_FragColor.rgb += getEmission();
+   gl_FragColor.rgb = addFog(gl_FragColor.rgb);
+   gl_FragColor.rgb = toneMap(gl_FragColor.rgb);
+   gl_FragColor.rgb = gammaCorrectOutput(gl_FragColor.rgb);
+gl_FragColor.a = dAlpha;
+
+}
+^AT^vertex_position,POSITION,vertex_texCoord0,TEXCOORD0,^SH^1401000637^VS^varying vec3 vPositionW;
+varying vec2 vUv0;
+
+
+
+attribute vec3 vertex_position;
+attribute vec3 vertex_normal;
+attribute vec4 vertex_tangent;
+attribute vec2 vertex_texCoord0;
+attribute vec2 vertex_texCoord1;
+attribute vec4 vertex_color;
+uniform mat4 matrix_viewProjection;
+uniform mat4 matrix_model;
+uniform mat3 matrix_normal;
+vec3 dPositionW;
+mat4 dModelMatrix;
+mat3 dNormalMatrix;
+vec3 dLightPosW;
+vec3 dLightDirNormW;
+vec3 dNormalW;
+
+vec2 getUv0() {
+    return vertex_texCoord0;
+}
+mat4 getModelMatrix() {
+    return matrix_model;
+}
+vec4 getPosition() {
+    vec4 posW = vec4((getModelMatrix() * vec4(vertex_position, 1.0)).xy, 0.0, 1.0);
+    dPositionW = posW.xyz;
+    return posW;
+}
+vec3 getWorldPosition() {
+    return dPositionW;
+}
+
+
+void main(void) {
+    gl_Position = getPosition();
+   vPositionW    = getWorldPosition();
+   vec2 uv0 = getUv0();
+   vUv0 = uv0;
+}^PS^#extension GL_OES_standard_derivatives : enable
+
+precision highp float;
+
+varying vec3 vPositionW;
+varying vec2 vUv0;
+
+uniform vec3 view_position;
+uniform vec3 light_globalAmbient;
+float square(float x) {
+    return x*x;
+}
+float saturate(float x) {
+    return clamp(x, 0.0, 1.0);
+}
+vec3 saturate(vec3 x) {
+    return clamp(x, vec3(0.0), vec3(1.0));
+}
+vec4 dReflection;
+vec3 dAlbedo;
+vec3 dDiffuseLight;
+vec3 dSpecularLight;
+vec3 dSpecularity;
+float dAlpha;
+
+vec4 texture2DSRGB(sampler2D tex, vec2 uv) {
+    return texture2D(tex, uv);
+}
+vec4 textureCubeSRGB(samplerCube tex, vec3 uvw) {
+    return textureCube(tex, uvw);
+}
+vec3 gammaCorrectOutput(vec3 color) {
+    return color;
+}
+vec3 gammaCorrectInput(vec3 color) {
+    return color;
+}
+float gammaCorrectInput(float color) {
+    return color;
+}
+vec4 gammaCorrectInput(vec4 color) {
+    return color;
+}
+vec3 toneMap(vec3 color) {
+    return color;
+}
+vec3 addFog(vec3 color) {
+    return color;
+}
+uniform vec3 material_diffuse;
+void getAlbedo() {
+    dAlbedo = material_diffuse.rgb;
+}
+uniform float material_opacity;
+void getOpacity() {
+    dAlpha = material_opacity;
+}
+uniform vec3 material_emissive;
+vec3 getEmission() {
+    return material_emissive;
+}
+vec3 combineColor() {
+    return dAlbedo * dDiffuseLight;
+}
+
+void addAmbient() {
+    dDiffuseLight += light_globalAmbient;
+}
+uniform sampler2D texture_msdfMap;
+float median(float r, float g, float b) {
+    return max(min(r, g), min(max(r, g), b));
+}
+vec4 applyMsdf(vec4 color) {
+    vec3 sample = texture2D(texture_msdfMap, vUv0).rgb;
+    float distance = median(sample.r, sample.g, sample.b) - 0.5;
+    vec4 msdf;
+    #ifdef GL_OES_standard_derivatives
+    vec4 background = vec4(0.0);
+    float opacity = clamp(distance/fwidth(distance) + 0.5, 0.0, 1.0);
+    msdf = mix(background, color, opacity);
+    if (msdf.a < 0.01) {
+        discard;
+    }
+    #else
+    msdf = color;
+    if (distance < 0.1) {
+        discard;
+    }
+    #endif
+    return msdf;
+}
+
+void main(void) {
+    dDiffuseLight = vec3(0);
+    dSpecularLight = vec3(0);
+    dReflection = vec4(0);
+    dSpecularity = vec3(0);
+   getOpacity();
+   getAlbedo();
+   addAmbient();
+
+   gl_FragColor.rgb = combineColor();
+   gl_FragColor.rgb += getEmission();
+   gl_FragColor.rgb = addFog(gl_FragColor.rgb);
+   gl_FragColor.rgb = toneMap(gl_FragColor.rgb);
+   gl_FragColor.rgb = gammaCorrectOutput(gl_FragColor.rgb);
+gl_FragColor.rgb *= dAlpha;
+gl_FragColor.a = dAlpha;
+   gl_FragColor = applyMsdf(gl_FragColor);
+
+}
+^AT^vertex_position,POSITION,vertex_texCoord0,TEXCOORD0,^SH^1856191347^VS^varying vec3 vPositionW;
+varying vec2 vUv0;
+
+
+
+attribute vec3 vertex_position;
+attribute vec3 vertex_normal;
+attribute vec4 vertex_tangent;
+attribute vec2 vertex_texCoord0;
+attribute vec2 vertex_texCoord1;
+attribute vec4 vertex_color;
+uniform mat4 matrix_viewProjection;
+uniform mat4 matrix_model;
+uniform mat3 matrix_normal;
+vec3 dPositionW;
+mat4 dModelMatrix;
+mat3 dNormalMatrix;
+vec3 dLightPosW;
+vec3 dLightDirNormW;
+vec3 dNormalW;
+
+vec2 getUv0() {
+    return vertex_texCoord0;
+}
+mat4 getModelMatrix() {
+    return matrix_model;
+}
+vec4 getPosition() {
+    dModelMatrix = getModelMatrix();
+    vec4 posW = dModelMatrix * vec4(vertex_position, 1.0);
+    dPositionW = posW.xyz;
+    return matrix_viewProjection * posW;
+}
+vec3 getWorldPosition() {
+    return dPositionW;
+}
+
+
+void main(void) {
+    gl_Position = getPosition();
+   vPositionW    = getWorldPosition();
+   vec2 uv0 = getUv0();
+   vUv0 = uv0;
+}^PS^#extension GL_OES_standard_derivatives : enable
+
+precision highp float;
+
+varying vec3 vPositionW;
+varying vec2 vUv0;
+
+uniform vec3 view_position;
+uniform vec3 light_globalAmbient;
+float square(float x) {
+    return x*x;
+}
+float saturate(float x) {
+    return clamp(x, 0.0, 1.0);
+}
+vec3 saturate(vec3 x) {
+    return clamp(x, vec3(0.0), vec3(1.0));
+}
+vec4 dReflection;
+vec3 dAlbedo;
+vec3 dNormalW;
+vec3 dViewDirW;
+vec3 dDiffuseLight;
+vec3 dSpecularLight;
+vec3 dLightDirNormW;
+vec3 dSpecularity;
+float dGlossiness;
+float dAlpha;
+
+vec3 gammaCorrectInput(vec3 color) {
+    return pow(color, vec3(2.2));
+}
+float gammaCorrectInput(float color) {
+    return pow(color, 2.2);
+}
+vec4 gammaCorrectInput(vec4 color) {
+    return vec4(pow(color.rgb, vec3(2.2)), color.a);
+}
+vec4 texture2DSRGB(sampler2D tex, vec2 uv) {
+    vec4 rgba = texture2D(tex, uv);
+    rgba.rgb = gammaCorrectInput(rgba.rgb);
+    return rgba;
+}
+vec4 textureCubeSRGB(samplerCube tex, vec3 uvw) {
+    vec4 rgba = textureCube(tex, uvw);
+    rgba.rgb = gammaCorrectInput(rgba.rgb);
+    return rgba;
+}
+vec3 gammaCorrectOutput(vec3 color) {
+    color += vec3(0.0000001);
+    return pow(color, vec3(0.45));
+}
+uniform float exposure;
+vec3 toneMap(vec3 color) {
+    return color * exposure;
+}
+vec3 addFog(vec3 color) {
+    return color;
+}
+uniform sampler2D texture_diffuseMap;
+void getAlbedo() {
+    dAlbedo = texture2DSRGB(texture_diffuseMap, vUv0).rgb;
+}
+uniform sampler2D texture_opacityMap;
+void getOpacity() {
+    dAlpha = texture2D(texture_opacityMap, vUv0).a;
+}
+uniform sampler2D texture_emissiveMap;
+vec3 getEmission() {
+    return texture2DSRGB(texture_emissiveMap, vUv0).rgb;
+}
+float antiAliasGlossiness(float power) {
+    return power;
+}
+uniform vec3 material_specular;
+void getSpecularity() {
+    dSpecularity = material_specular;
+}
+uniform float material_shininess;
+void getGlossiness() {
+    dGlossiness = material_shininess + 0.0000001;
+}
+// Schlick's approximation
+uniform float material_fresnelFactor; // unused
+void getFresnel() {
+    float fresnel = 1.0 - max(dot(dNormalW, dViewDirW), 0.0);
+    float fresnel2 = fresnel * fresnel;
+    fresnel *= fresnel2 * fresnel2;
+    fresnel *= dGlossiness * dGlossiness;
+    dSpecularity = dSpecularity + (1.0 - dSpecularity) * fresnel;
+}
+// Energy-conserving (hopefully) Blinn-Phong
+float getLightSpecular() {
+    vec3 h = normalize( -dLightDirNormW + dViewDirW );
+    float nh = max( dot( h, dNormalW ), 0.0 );
+    float specPow = exp2(dGlossiness * 11.0); // glossiness is linear, power is not; 0 - 2048
+    specPow = antiAliasGlossiness(specPow);
+    // Hack: On Mac OS X, calling pow with zero for the exponent generates hideous artifacts so bias up a little
+    specPow = max(specPow, 0.0001);
+    return pow(nh, specPow) * (specPow + 2.0) / 8.0;
+}
+vec3 combineColor() {
+    return mix(dAlbedo * dDiffuseLight, dSpecularLight + dReflection.rgb * dReflection.a, dSpecularity);
+}
+
+void addAmbient() {
+    dDiffuseLight += light_globalAmbient;
+}
+uniform float alpha_ref;
+void alphaTest(float a) {
+    if (a < alpha_ref) discard;
+}
+
+void main(void) {
+    dDiffuseLight = vec3(0);
+    dSpecularLight = vec3(0);
+    dReflection = vec4(0);
+    dSpecularity = vec3(0);
+   getOpacity();
+   alphaTest(dAlpha);
+   getAlbedo();
+   addAmbient();
+
+   gl_FragColor.rgb = combineColor();
+   gl_FragColor.rgb += getEmission();
+   gl_FragColor.rgb = addFog(gl_FragColor.rgb);
+   gl_FragColor.rgb = toneMap(gl_FragColor.rgb);
+   gl_FragColor.rgb = gammaCorrectOutput(gl_FragColor.rgb);
+gl_FragColor.a = dAlpha;
+
+}
+^AT^vertex_position,POSITION,vertex_texCoord0,TEXCOORD0,^SH^depth^VS^attribute vec3 vertex_position;
+uniform mat4 matrix_model;
+uniform mat4 matrix_viewProjection;
+vec3 dPositionW;
+mat4 dModelMatrix;
+mat4 getModelMatrix() {
+    return matrix_model;
+}
+vec4 getPosition() {
+    dModelMatrix = getModelMatrix();
+    vec4 posW = dModelMatrix * vec4(vertex_position, 1.0);
+    dPositionW = posW.xyz;
+    return matrix_viewProjection * posW;
+}
+vec3 getWorldPosition() {
+    return dPositionW;
+}
+varying float vDepth;
+uniform mat4 matrix_view;
+uniform float camera_far;
+
+void main(void)
+{
+   gl_Position = getPosition();
+    vDepth = -(matrix_view * vec4(getWorldPosition(),1.0)).z / camera_far;
+}
+^PS^precision highp float;
+
+varying float vDepth;
+
+vec4 packFloat(float depth)
+{
+    const vec4 bit_shift = vec4(256.0 * 256.0 * 256.0, 256.0 * 256.0, 256.0, 1.0);
+    const vec4 bit_mask  = vec4(0.0, 1.0 / 256.0, 1.0 / 256.0, 1.0 / 256.0);
+    vec4 res = mod(depth * bit_shift * vec4(255), vec4(256) ) / vec4(255);
+    res -= res.xxyz * bit_mask;
+    return res;
+}
+
+void main(void)
+{
+float depth = vDepth;
+gl_FragColor = packFloat(depth);
+}
+^AT^vertex_position,POSITION,^SH^depth_skin^VS^attribute vec3 vertex_position;
+uniform mat4 matrix_model;
+uniform mat4 matrix_viewProjection;
+vec3 dPositionW;
+mat4 dModelMatrix;
+attribute vec4 vertex_boneWeights;
+attribute vec4 vertex_boneIndices;
+uniform sampler2D texture_poseMap;
+uniform vec2 texture_poseMapSize;
+uniform vec3 skinPosOffset;
+mat4 getBoneMatrix(const in float i)
+{
+    float j = i * 4.0;
+    float x = mod(j, float(texture_poseMapSize.x));
+    float y = floor(j / float(texture_poseMapSize.x));
+    float dx = 1.0 / float(texture_poseMapSize.x);
+    float dy = 1.0 / float(texture_poseMapSize.y);
+    y = dy * (y + 0.5);
+    vec4 v1 = texture2D(texture_poseMap, vec2(dx * (x + 0.5), y));
+    vec4 v2 = texture2D(texture_poseMap, vec2(dx * (x + 1.5), y));
+    vec4 v3 = texture2D(texture_poseMap, vec2(dx * (x + 2.5), y));
+    vec4 v4 = texture2D(texture_poseMap, vec2(dx * (x + 3.5), y));
+    mat4 bone = mat4(v1, v2, v3, v4);
+    return bone;
+}
+mat4 getModelMatrix() {
+    return getBoneMatrix(vertex_boneIndices.x) * vertex_boneWeights.x +
+           getBoneMatrix(vertex_boneIndices.y) * vertex_boneWeights.y +
+           getBoneMatrix(vertex_boneIndices.z) * vertex_boneWeights.z +
+           getBoneMatrix(vertex_boneIndices.w) * vertex_boneWeights.w;
+}
+vec4 getPosition() {
+    dModelMatrix = getModelMatrix();
+    vec4 posW = dModelMatrix * vec4(vertex_position, 1.0);
+    //posW.xyz /= posW.w;
+    posW.xyz += skinPosOffset;
+    dPositionW = posW.xyz;// / posW.w;
+    return matrix_viewProjection * posW;
+}
+vec3 getWorldPosition() {
+    return dPositionW;
+}
+varying float vDepth;
+uniform mat4 matrix_view;
+uniform float camera_far;
+
+void main(void)
+{
+   gl_Position = getPosition();
+    vDepth = -(matrix_view * vec4(getWorldPosition(),1.0)).z / camera_far;
+}
+^PS^precision highp float;
+
+varying float vDepth;
+
+vec4 packFloat(float depth)
+{
+    const vec4 bit_shift = vec4(256.0 * 256.0 * 256.0, 256.0 * 256.0, 256.0, 1.0);
+    const vec4 bit_mask  = vec4(0.0, 1.0 / 256.0, 1.0 / 256.0, 1.0 / 256.0);
+    vec4 res = mod(depth * bit_shift * vec4(255), vec4(256) ) / vec4(255);
+    res -= res.xxyz * bit_mask;
+    return res;
+}
+
+void main(void)
+{
+float depth = vDepth;
+gl_FragColor = packFloat(depth);
+}
+^AT^vertex_position,POSITION,vertex_boneWeights,BLENDWEIGHT,vertex_boneIndices,BLENDINDICES,^SH^depth_opam^VS^attribute vec3 vertex_position;
+uniform mat4 matrix_model;
+uniform mat4 matrix_viewProjection;
+vec3 dPositionW;
+mat4 dModelMatrix;
+mat4 getModelMatrix() {
+    return matrix_model;
+}
+vec4 getPosition() {
+    dModelMatrix = getModelMatrix();
+    vec4 posW = dModelMatrix * vec4(vertex_position, 1.0);
+    dPositionW = posW.xyz;
+    return matrix_viewProjection * posW;
+}
+vec3 getWorldPosition() {
+    return dPositionW;
+}
+attribute vec2 vertex_texCoord0;
+
+varying vec2 vUv0;
+
+varying float vDepth;
+uniform mat4 matrix_view;
+uniform float camera_far;
+
+void main(void)
+{
+   gl_Position = getPosition();
+    vUv0 = vertex_texCoord0;
+    vDepth = -(matrix_view * vec4(getWorldPosition(),1.0)).z / camera_far;
+}
+^PS^precision highp float;
+
+varying vec2 vUv0;
+
+uniform sampler2D texture_opacityMap;
+
+uniform float alpha_ref;
+void alphaTest(float a) {
+    if (a < alpha_ref) discard;
+}
+varying float vDepth;
+
+vec4 packFloat(float depth)
+{
+    const vec4 bit_shift = vec4(256.0 * 256.0 * 256.0, 256.0 * 256.0, 256.0, 1.0);
+    const vec4 bit_mask  = vec4(0.0, 1.0 / 256.0, 1.0 / 256.0, 1.0 / 256.0);
+    vec4 res = mod(depth * bit_shift * vec4(255), vec4(256) ) / vec4(255);
+    res -= res.xxyz * bit_mask;
+    return res;
+}
+
+void main(void)
+{
+    alphaTest(texture2D(texture_opacityMap, vUv0).r );
+
+float depth = vDepth;
+gl_FragColor = packFloat(depth);
+}
+^AT^vertex_position,POSITION,vertex_texCoord0,TEXCOORD0,^SH^depth_skin_opam^VS^attribute vec3 vertex_position;
+uniform mat4 matrix_model;
+uniform mat4 matrix_viewProjection;
+vec3 dPositionW;
+mat4 dModelMatrix;
+attribute vec4 vertex_boneWeights;
+attribute vec4 vertex_boneIndices;
+uniform sampler2D texture_poseMap;
+uniform vec2 texture_poseMapSize;
+uniform vec3 skinPosOffset;
+mat4 getBoneMatrix(const in float i)
+{
+    float j = i * 4.0;
+    float x = mod(j, float(texture_poseMapSize.x));
+    float y = floor(j / float(texture_poseMapSize.x));
+    float dx = 1.0 / float(texture_poseMapSize.x);
+    float dy = 1.0 / float(texture_poseMapSize.y);
+    y = dy * (y + 0.5);
+    vec4 v1 = texture2D(texture_poseMap, vec2(dx * (x + 0.5), y));
+    vec4 v2 = texture2D(texture_poseMap, vec2(dx * (x + 1.5), y));
+    vec4 v3 = texture2D(texture_poseMap, vec2(dx * (x + 2.5), y));
+    vec4 v4 = texture2D(texture_poseMap, vec2(dx * (x + 3.5), y));
+    mat4 bone = mat4(v1, v2, v3, v4);
+    return bone;
+}
+mat4 getModelMatrix() {
+    return getBoneMatrix(vertex_boneIndices.x) * vertex_boneWeights.x +
+           getBoneMatrix(vertex_boneIndices.y) * vertex_boneWeights.y +
+           getBoneMatrix(vertex_boneIndices.z) * vertex_boneWeights.z +
+           getBoneMatrix(vertex_boneIndices.w) * vertex_boneWeights.w;
+}
+vec4 getPosition() {
+    dModelMatrix = getModelMatrix();
+    vec4 posW = dModelMatrix * vec4(vertex_position, 1.0);
+    //posW.xyz /= posW.w;
+    posW.xyz += skinPosOffset;
+    dPositionW = posW.xyz;// / posW.w;
+    return matrix_viewProjection * posW;
+}
+vec3 getWorldPosition() {
+    return dPositionW;
+}
+attribute vec2 vertex_texCoord0;
+
+varying vec2 vUv0;
+
+varying float vDepth;
+uniform mat4 matrix_view;
+uniform float camera_far;
+
+void main(void)
+{
+   gl_Position = getPosition();
+    vUv0 = vertex_texCoord0;
+    vDepth = -(matrix_view * vec4(getWorldPosition(),1.0)).z / camera_far;
+}
+^PS^precision highp float;
+
+varying vec2 vUv0;
+
+uniform sampler2D texture_opacityMap;
+
+uniform float alpha_ref;
+void alphaTest(float a) {
+    if (a < alpha_ref) discard;
+}
+varying float vDepth;
+
+vec4 packFloat(float depth)
+{
+    const vec4 bit_shift = vec4(256.0 * 256.0 * 256.0, 256.0 * 256.0, 256.0, 1.0);
+    const vec4 bit_mask  = vec4(0.0, 1.0 / 256.0, 1.0 / 256.0, 1.0 / 256.0);
+    vec4 res = mod(depth * bit_shift * vec4(255), vec4(256) ) / vec4(255);
+    res -= res.xxyz * bit_mask;
+    return res;
+}
+
+void main(void)
+{
+    alphaTest(texture2D(texture_opacityMap, vUv0).r );
+
+float depth = vDepth;
+gl_FragColor = packFloat(depth);
+}
+^AT^vertex_position,POSITION,vertex_boneWeights,BLENDWEIGHT,vertex_boneIndices,BLENDINDICES,vertex_texCoord0,TEXCOORD0,^SH^fsQuad01true^VS^attribute vec2 vertex_position;
+varying vec2 vUv0;
+void main(void)
+{
+    gl_Position = vec4(vertex_position, 0.5, 1.0);
+    vUv0 = vertex_position.xy*0.5+0.5;
+}
+^PS^precision highp float;
+
+
+varying vec2 vUv0;
+uniform sampler2D particleTexIN;
+uniform sampler2D internalTex0;
+uniform sampler2D internalTex1;
+uniform sampler2D internalTex2;
+uniform mat3 emitterMatrix;
+uniform vec3 emitterScale;
+uniform vec3 emitterPos, frameRandom, localVelocityDivMult, velocityDivMult;
+uniform float delta, rate, rateDiv, lifetime, numParticles, rotSpeedDivMult, seed;
+uniform float startAngle, startAngle2;
+uniform float initialVelocity;
+uniform float graphSampleSize;
+uniform float graphNumSamples;
+vec3 inPos;
+vec3 inVel;
+float inAngle;
+bool inShow;
+float inLife;
+float visMode;
+vec3 outPos;
+vec3 outVel;
+float outAngle;
+bool outShow;
+float outLife;
+//RG=X, BA=Y
+//RG=Z, BA=A
+//RGB=V, A=visMode
+//RGBA=life
+#define PI2 6.283185307179586
+uniform vec3 inBoundsSize;
+uniform vec3 inBoundsCenter;
+uniform float maxVel;
+float decodeFloatRG(vec2 rg) {
+    return rg.y*(1.0/255.0) + rg.x;
+}
+float decodeFloatRGBA( vec4 rgba ) {
+  return dot( rgba, vec4(1.0, 1.0/255.0, 1.0/65025.0, 1.0/160581375.0) );
+}
+void readInput(float uv) {
+    vec4 tex0 = texture2D(particleTexIN, vec2(uv, 0.125));
+    vec4 tex1 = texture2D(particleTexIN, vec2(uv, 0.375));
+    vec4 tex2 = texture2D(particleTexIN, vec2(uv, 0.625));
+    vec4 tex3 = texture2D(particleTexIN, vec2(uv, 0.875));
+    inPos = vec3(decodeFloatRG(tex0.rg), decodeFloatRG(tex0.ba), decodeFloatRG(tex1.rg));
+    inPos = (inPos - vec3(0.5)) * inBoundsSize + inBoundsCenter;
+    inVel = tex2.xyz;
+    inVel = (inVel - vec3(0.5)) * maxVel;
+    inAngle = decodeFloatRG(tex1.ba) * PI2;
+    inShow = tex2.a > 0.5;
+    inLife = decodeFloatRGBA(tex3);
+    float maxNegLife = max(lifetime, (numParticles - 1.0) * (rate+rateDiv));
+    float maxPosLife = lifetime+1.0;
+    inLife = inLife * (maxNegLife + maxPosLife) - maxNegLife;
+}
+uniform vec3 outBoundsMul;
+uniform vec3 outBoundsAdd;
+vec2 encodeFloatRG( float v ) {
+  vec2 enc = vec2(1.0, 255.0) * v;
+  enc = fract(enc);
+  enc -= enc.yy * vec2(1.0/255.0, 1.0/255.0);
+  return enc;
+}
+vec4 encodeFloatRGBA( float v ) {
+  vec4 enc = vec4(1.0, 255.0, 65025.0, 160581375.0) * v;
+  enc = fract(enc);
+  enc -= enc.yzww * vec4(1.0/255.0,1.0/255.0,1.0/255.0,0.0);
+  return enc;
+}
+void writeOutput() {
+    //outPos = (outPos - outBoundsCenter) / outBoundsSize + vec3(0.5);
+    outPos = outPos * outBoundsMul + outBoundsAdd;
+    outAngle = fract(outAngle / PI2);
+    outVel = (outVel / maxVel) + vec3(0.5); // TODO: mul
+    float maxNegLife = max(lifetime, (numParticles - 1.0) * (rate+rateDiv));
+    float maxPosLife = lifetime+1.0;
+    outLife = (outLife + maxNegLife) / (maxNegLife + maxPosLife);
+    if (gl_FragCoord.y < 1.0) {
+        gl_FragColor = vec4(encodeFloatRG(outPos.x), encodeFloatRG(outPos.y));
+    } else if (gl_FragCoord.y < 2.0) {
+        gl_FragColor = vec4(encodeFloatRG(outPos.z), encodeFloatRG(outAngle));
+    } else if (gl_FragCoord.y < 3.0) {
+        gl_FragColor = vec4(outVel, visMode*0.5+0.5);
+    } else {
+        gl_FragColor = encodeFloatRGBA(outLife);
+    }
+}
+uniform float spawnBoundsSphere;
+vec3 calcSpawnPosition(vec3 inBounds, float rndFactor) {
+    float rnd4 = fract(rndFactor * 1000.0);
+    return emitterPos + normalize(inBounds.xyz - vec3(0.5)) * rnd4 * spawnBoundsSphere;
+}
+void addInitialVelocity(inout vec3 localVelocity, vec3 inBounds) {
+    localVelocity += normalize(inBounds - vec3(0.5)) * initialVelocity;
+}
+float saturate(float x) {
+    return clamp(x, 0.0, 1.0);
+}
+vec3 unpack3NFloats(float src) {
+    float r = fract(src);
+    float g = fract(src * 256.0);
+    float b = fract(src * 65536.0);
+    return vec3(r, g, b);
+}
+vec3 tex1Dlod_lerp(sampler2D tex, vec2 tc, out vec3 w) {
+    vec4 a = texture2D(tex, tc);
+    vec4 b = texture2D(tex, tc + graphSampleSize);
+    float c = fract(tc.x * graphNumSamples);
+    vec3 unpackedA = unpack3NFloats(a.w);
+    vec3 unpackedB = unpack3NFloats(b.w);
+    w = mix(unpackedA, unpackedB, c);
+    return mix(a.xyz, b.xyz, c);
+}
+#define HASHSCALE4 vec4(1031, .1030, .0973, .1099)
+vec4 hash41(float p) {
+    vec4 p4 = fract(vec4(p) * HASHSCALE4);
+    p4 += dot(p4, p4.wzxy+19.19);
+    return fract(vec4((p4.x + p4.y)*p4.z, (p4.x + p4.z)*p4.y, (p4.y + p4.z)*p4.w, (p4.z + p4.w)*p4.x));
+}
+void main(void)
+{
+    if (gl_FragCoord.x > numParticles) discard;
+    readInput(vUv0.x);
+    visMode = inShow? 1.0 : -1.0;
+    vec4 rndFactor = hash41(gl_FragCoord.x + seed);
+    float particleRate = rate + rateDiv * rndFactor.x;
+    outLife = inLife + delta;
+    float nlife = clamp(outLife / lifetime, 0.0, 1.0);
+    vec3 localVelocityDiv;
+    vec3 velocityDiv;
+    vec3 paramDiv;
+    vec3 localVelocity = tex1Dlod_lerp(internalTex0, vec2(nlife, 0), localVelocityDiv);
+    vec3 velocity =      tex1Dlod_lerp(internalTex1, vec2(nlife, 0), velocityDiv);
+    vec3 params =        tex1Dlod_lerp(internalTex2, vec2(nlife, 0), paramDiv);
+    float rotSpeed = params.x;
+    float rotSpeedDiv = paramDiv.y;
+    localVelocity +=    (localVelocityDiv * vec3(2.0) - vec3(1.0)) * localVelocityDivMult * rndFactor.xyz;
+    velocity +=         (velocityDiv * vec3(2.0) - vec3(1.0)) * velocityDivMult * rndFactor.xyz;
+    rotSpeed +=         (rotSpeedDiv * 2.0 - 1.0) * rotSpeedDivMult * rndFactor.y;
+    addInitialVelocity(localVelocity, rndFactor.xyz);
+    outVel = emitterMatrix * localVelocity.xyz + velocity.xyz * emitterScale;
+    outPos = inPos + outVel * delta;
+    outAngle = inAngle + rotSpeed * delta;
+    bool respawn = outLife <= 0.0 || outLife >= lifetime;
+    outPos = respawn? calcSpawnPosition(rndFactor.xyz, rndFactor.x) : outPos;
+    outAngle = respawn? mix(startAngle, startAngle2, rndFactor.x) : outAngle;
+    outVel = respawn? vec3(0.0) : outVel;
+    if (outLife >= lifetime) {
+        outLife -= max(lifetime, (numParticles - 1.0) * particleRate);
+        visMode = 1.0;
+    }
+    visMode = outLife < 0.0? 1.0: visMode;
+
+    writeOutput();
+}
+^AT^vertex_position,POSITION,^SH^fsQuad11true^VS^attribute vec2 vertex_position;
+varying vec2 vUv0;
+void main(void)
+{
+    gl_Position = vec4(vertex_position, 0.5, 1.0);
+    vUv0 = vertex_position.xy*0.5+0.5;
+}
+^PS^precision highp float;
+
+
+varying vec2 vUv0;
+uniform sampler2D particleTexIN;
+uniform sampler2D internalTex0;
+uniform sampler2D internalTex1;
+uniform sampler2D internalTex2;
+uniform mat3 emitterMatrix;
+uniform vec3 emitterScale;
+uniform vec3 emitterPos, frameRandom, localVelocityDivMult, velocityDivMult;
+uniform float delta, rate, rateDiv, lifetime, numParticles, rotSpeedDivMult, seed;
+uniform float startAngle, startAngle2;
+uniform float initialVelocity;
+uniform float graphSampleSize;
+uniform float graphNumSamples;
+vec3 inPos;
+vec3 inVel;
+float inAngle;
+bool inShow;
+float inLife;
+float visMode;
+vec3 outPos;
+vec3 outVel;
+float outAngle;
+bool outShow;
+float outLife;
+//RG=X, BA=Y
+//RG=Z, BA=A
+//RGB=V, A=visMode
+//RGBA=life
+#define PI2 6.283185307179586
+uniform vec3 inBoundsSize;
+uniform vec3 inBoundsCenter;
+uniform float maxVel;
+float decodeFloatRG(vec2 rg) {
+    return rg.y*(1.0/255.0) + rg.x;
+}
+float decodeFloatRGBA( vec4 rgba ) {
+  return dot( rgba, vec4(1.0, 1.0/255.0, 1.0/65025.0, 1.0/160581375.0) );
+}
+void readInput(float uv) {
+    vec4 tex0 = texture2D(particleTexIN, vec2(uv, 0.125));
+    vec4 tex1 = texture2D(particleTexIN, vec2(uv, 0.375));
+    vec4 tex2 = texture2D(particleTexIN, vec2(uv, 0.625));
+    vec4 tex3 = texture2D(particleTexIN, vec2(uv, 0.875));
+    inPos = vec3(decodeFloatRG(tex0.rg), decodeFloatRG(tex0.ba), decodeFloatRG(tex1.rg));
+    inPos = (inPos - vec3(0.5)) * inBoundsSize + inBoundsCenter;
+    inVel = tex2.xyz;
+    inVel = (inVel - vec3(0.5)) * maxVel;
+    inAngle = decodeFloatRG(tex1.ba) * PI2;
+    inShow = tex2.a > 0.5;
+    inLife = decodeFloatRGBA(tex3);
+    float maxNegLife = max(lifetime, (numParticles - 1.0) * (rate+rateDiv));
+    float maxPosLife = lifetime+1.0;
+    inLife = inLife * (maxNegLife + maxPosLife) - maxNegLife;
+}
+uniform vec3 outBoundsMul;
+uniform vec3 outBoundsAdd;
+vec2 encodeFloatRG( float v ) {
+  vec2 enc = vec2(1.0, 255.0) * v;
+  enc = fract(enc);
+  enc -= enc.yy * vec2(1.0/255.0, 1.0/255.0);
+  return enc;
+}
+vec4 encodeFloatRGBA( float v ) {
+  vec4 enc = vec4(1.0, 255.0, 65025.0, 160581375.0) * v;
+  enc = fract(enc);
+  enc -= enc.yzww * vec4(1.0/255.0,1.0/255.0,1.0/255.0,0.0);
+  return enc;
+}
+void writeOutput() {
+    //outPos = (outPos - outBoundsCenter) / outBoundsSize + vec3(0.5);
+    outPos = outPos * outBoundsMul + outBoundsAdd;
+    outAngle = fract(outAngle / PI2);
+    outVel = (outVel / maxVel) + vec3(0.5); // TODO: mul
+    float maxNegLife = max(lifetime, (numParticles - 1.0) * (rate+rateDiv));
+    float maxPosLife = lifetime+1.0;
+    outLife = (outLife + maxNegLife) / (maxNegLife + maxPosLife);
+    if (gl_FragCoord.y < 1.0) {
+        gl_FragColor = vec4(encodeFloatRG(outPos.x), encodeFloatRG(outPos.y));
+    } else if (gl_FragCoord.y < 2.0) {
+        gl_FragColor = vec4(encodeFloatRG(outPos.z), encodeFloatRG(outAngle));
+    } else if (gl_FragCoord.y < 3.0) {
+        gl_FragColor = vec4(outVel, visMode*0.5+0.5);
+    } else {
+        gl_FragColor = encodeFloatRGBA(outLife);
+    }
+}
+uniform float spawnBoundsSphere;
+vec3 calcSpawnPosition(vec3 inBounds, float rndFactor) {
+    float rnd4 = fract(rndFactor * 1000.0);
+    return emitterPos + normalize(inBounds.xyz - vec3(0.5)) * rnd4 * spawnBoundsSphere;
+}
+void addInitialVelocity(inout vec3 localVelocity, vec3 inBounds) {
+    localVelocity += normalize(inBounds - vec3(0.5)) * initialVelocity;
+}
+float saturate(float x) {
+    return clamp(x, 0.0, 1.0);
+}
+vec3 unpack3NFloats(float src) {
+    float r = fract(src);
+    float g = fract(src * 256.0);
+    float b = fract(src * 65536.0);
+    return vec3(r, g, b);
+}
+vec3 tex1Dlod_lerp(sampler2D tex, vec2 tc, out vec3 w) {
+    vec4 a = texture2D(tex, tc);
+    vec4 b = texture2D(tex, tc + graphSampleSize);
+    float c = fract(tc.x * graphNumSamples);
+    vec3 unpackedA = unpack3NFloats(a.w);
+    vec3 unpackedB = unpack3NFloats(b.w);
+    w = mix(unpackedA, unpackedB, c);
+    return mix(a.xyz, b.xyz, c);
+}
+#define HASHSCALE4 vec4(1031, .1030, .0973, .1099)
+vec4 hash41(float p) {
+    vec4 p4 = fract(vec4(p) * HASHSCALE4);
+    p4 += dot(p4, p4.wzxy+19.19);
+    return fract(vec4((p4.x + p4.y)*p4.z, (p4.x + p4.z)*p4.y, (p4.y + p4.z)*p4.w, (p4.z + p4.w)*p4.x));
+}
+void main(void)
+{
+    if (gl_FragCoord.x > numParticles) discard;
+    readInput(vUv0.x);
+    visMode = inShow? 1.0 : -1.0;
+    vec4 rndFactor = hash41(gl_FragCoord.x + seed);
+    float particleRate = rate + rateDiv * rndFactor.x;
+    outLife = inLife + delta;
+    float nlife = clamp(outLife / lifetime, 0.0, 1.0);
+    vec3 localVelocityDiv;
+    vec3 velocityDiv;
+    vec3 paramDiv;
+    vec3 localVelocity = tex1Dlod_lerp(internalTex0, vec2(nlife, 0), localVelocityDiv);
+    vec3 velocity =      tex1Dlod_lerp(internalTex1, vec2(nlife, 0), velocityDiv);
+    vec3 params =        tex1Dlod_lerp(internalTex2, vec2(nlife, 0), paramDiv);
+    float rotSpeed = params.x;
+    float rotSpeedDiv = paramDiv.y;
+    localVelocity +=    (localVelocityDiv * vec3(2.0) - vec3(1.0)) * localVelocityDivMult * rndFactor.xyz;
+    velocity +=         (velocityDiv * vec3(2.0) - vec3(1.0)) * velocityDivMult * rndFactor.xyz;
+    rotSpeed +=         (rotSpeedDiv * 2.0 - 1.0) * rotSpeedDivMult * rndFactor.y;
+    addInitialVelocity(localVelocity, rndFactor.xyz);
+    outVel = emitterMatrix * localVelocity.xyz + velocity.xyz * emitterScale;
+    outPos = inPos + outVel * delta;
+    outAngle = inAngle + rotSpeed * delta;
+    bool respawn = outLife <= 0.0 || outLife >= lifetime;
+    outPos = respawn? calcSpawnPosition(rndFactor.xyz, rndFactor.x) : outPos;
+    outAngle = respawn? mix(startAngle, startAngle2, rndFactor.x) : outAngle;
+    outVel = respawn? vec3(0.0) : outVel;
+    if (outLife >= lifetime) {
+        outLife -= max(lifetime, (numParticles - 1.0) * particleRate);
+        visMode = -1.0;
+    }
+
+    writeOutput();
+}
+^AT^vertex_position,POSITION,^SH^fsQuad21true^VS^attribute vec2 vertex_position;
+varying vec2 vUv0;
+void main(void)
+{
+    gl_Position = vec4(vertex_position, 0.5, 1.0);
+    vUv0 = vertex_position.xy*0.5+0.5;
+}
+^PS^precision highp float;
+
+
+varying vec2 vUv0;
+uniform sampler2D particleTexIN;
+uniform sampler2D internalTex0;
+uniform sampler2D internalTex1;
+uniform sampler2D internalTex2;
+uniform mat3 emitterMatrix;
+uniform vec3 emitterScale;
+uniform vec3 emitterPos, frameRandom, localVelocityDivMult, velocityDivMult;
+uniform float delta, rate, rateDiv, lifetime, numParticles, rotSpeedDivMult, seed;
+uniform float startAngle, startAngle2;
+uniform float initialVelocity;
+uniform float graphSampleSize;
+uniform float graphNumSamples;
+vec3 inPos;
+vec3 inVel;
+float inAngle;
+bool inShow;
+float inLife;
+float visMode;
+vec3 outPos;
+vec3 outVel;
+float outAngle;
+bool outShow;
+float outLife;
+//RG=X, BA=Y
+//RG=Z, BA=A
+//RGB=V, A=visMode
+//RGBA=life
+#define PI2 6.283185307179586
+uniform vec3 inBoundsSize;
+uniform vec3 inBoundsCenter;
+uniform float maxVel;
+float decodeFloatRG(vec2 rg) {
+    return rg.y*(1.0/255.0) + rg.x;
+}
+float decodeFloatRGBA( vec4 rgba ) {
+  return dot( rgba, vec4(1.0, 1.0/255.0, 1.0/65025.0, 1.0/160581375.0) );
+}
+void readInput(float uv) {
+    vec4 tex0 = texture2D(particleTexIN, vec2(uv, 0.125));
+    vec4 tex1 = texture2D(particleTexIN, vec2(uv, 0.375));
+    vec4 tex2 = texture2D(particleTexIN, vec2(uv, 0.625));
+    vec4 tex3 = texture2D(particleTexIN, vec2(uv, 0.875));
+    inPos = vec3(decodeFloatRG(tex0.rg), decodeFloatRG(tex0.ba), decodeFloatRG(tex1.rg));
+    inPos = (inPos - vec3(0.5)) * inBoundsSize + inBoundsCenter;
+    inVel = tex2.xyz;
+    inVel = (inVel - vec3(0.5)) * maxVel;
+    inAngle = decodeFloatRG(tex1.ba) * PI2;
+    inShow = tex2.a > 0.5;
+    inLife = decodeFloatRGBA(tex3);
+    float maxNegLife = max(lifetime, (numParticles - 1.0) * (rate+rateDiv));
+    float maxPosLife = lifetime+1.0;
+    inLife = inLife * (maxNegLife + maxPosLife) - maxNegLife;
+}
+uniform vec3 outBoundsMul;
+uniform vec3 outBoundsAdd;
+vec2 encodeFloatRG( float v ) {
+  vec2 enc = vec2(1.0, 255.0) * v;
+  enc = fract(enc);
+  enc -= enc.yy * vec2(1.0/255.0, 1.0/255.0);
+  return enc;
+}
+vec4 encodeFloatRGBA( float v ) {
+  vec4 enc = vec4(1.0, 255.0, 65025.0, 160581375.0) * v;
+  enc = fract(enc);
+  enc -= enc.yzww * vec4(1.0/255.0,1.0/255.0,1.0/255.0,0.0);
+  return enc;
+}
+void writeOutput() {
+    //outPos = (outPos - outBoundsCenter) / outBoundsSize + vec3(0.5);
+    outPos = outPos * outBoundsMul + outBoundsAdd;
+    outAngle = fract(outAngle / PI2);
+    outVel = (outVel / maxVel) + vec3(0.5); // TODO: mul
+    float maxNegLife = max(lifetime, (numParticles - 1.0) * (rate+rateDiv));
+    float maxPosLife = lifetime+1.0;
+    outLife = (outLife + maxNegLife) / (maxNegLife + maxPosLife);
+    if (gl_FragCoord.y < 1.0) {
+        gl_FragColor = vec4(encodeFloatRG(outPos.x), encodeFloatRG(outPos.y));
+    } else if (gl_FragCoord.y < 2.0) {
+        gl_FragColor = vec4(encodeFloatRG(outPos.z), encodeFloatRG(outAngle));
+    } else if (gl_FragCoord.y < 3.0) {
+        gl_FragColor = vec4(outVel, visMode*0.5+0.5);
+    } else {
+        gl_FragColor = encodeFloatRGBA(outLife);
+    }
+}
+uniform float spawnBoundsSphere;
+vec3 calcSpawnPosition(vec3 inBounds, float rndFactor) {
+    float rnd4 = fract(rndFactor * 1000.0);
+    return emitterPos + normalize(inBounds.xyz - vec3(0.5)) * rnd4 * spawnBoundsSphere;
+}
+void addInitialVelocity(inout vec3 localVelocity, vec3 inBounds) {
+    localVelocity += normalize(inBounds - vec3(0.5)) * initialVelocity;
+}
+float saturate(float x) {
+    return clamp(x, 0.0, 1.0);
+}
+vec3 unpack3NFloats(float src) {
+    float r = fract(src);
+    float g = fract(src * 256.0);
+    float b = fract(src * 65536.0);
+    return vec3(r, g, b);
+}
+vec3 tex1Dlod_lerp(sampler2D tex, vec2 tc, out vec3 w) {
+    vec4 a = texture2D(tex, tc);
+    vec4 b = texture2D(tex, tc + graphSampleSize);
+    float c = fract(tc.x * graphNumSamples);
+    vec3 unpackedA = unpack3NFloats(a.w);
+    vec3 unpackedB = unpack3NFloats(b.w);
+    w = mix(unpackedA, unpackedB, c);
+    return mix(a.xyz, b.xyz, c);
+}
+#define HASHSCALE4 vec4(1031, .1030, .0973, .1099)
+vec4 hash41(float p) {
+    vec4 p4 = fract(vec4(p) * HASHSCALE4);
+    p4 += dot(p4, p4.wzxy+19.19);
+    return fract(vec4((p4.x + p4.y)*p4.z, (p4.x + p4.z)*p4.y, (p4.y + p4.z)*p4.w, (p4.z + p4.w)*p4.x));
+}
+void main(void)
+{
+    if (gl_FragCoord.x > numParticles) discard;
+    readInput(vUv0.x);
+    visMode = inShow? 1.0 : -1.0;
+    vec4 rndFactor = hash41(gl_FragCoord.x + seed);
+    float particleRate = rate + rateDiv * rndFactor.x;
+    outLife = inLife + delta;
+    float nlife = clamp(outLife / lifetime, 0.0, 1.0);
+    vec3 localVelocityDiv;
+    vec3 velocityDiv;
+    vec3 paramDiv;
+    vec3 localVelocity = tex1Dlod_lerp(internalTex0, vec2(nlife, 0), localVelocityDiv);
+    vec3 velocity =      tex1Dlod_lerp(internalTex1, vec2(nlife, 0), velocityDiv);
+    vec3 params =        tex1Dlod_lerp(internalTex2, vec2(nlife, 0), paramDiv);
+    float rotSpeed = params.x;
+    float rotSpeedDiv = paramDiv.y;
+    localVelocity +=    (localVelocityDiv * vec3(2.0) - vec3(1.0)) * localVelocityDivMult * rndFactor.xyz;
+    velocity +=         (velocityDiv * vec3(2.0) - vec3(1.0)) * velocityDivMult * rndFactor.xyz;
+    rotSpeed +=         (rotSpeedDiv * 2.0 - 1.0) * rotSpeedDivMult * rndFactor.y;
+    addInitialVelocity(localVelocity, rndFactor.xyz);
+    outVel = emitterMatrix * localVelocity.xyz + velocity.xyz * emitterScale;
+    outPos = inPos + outVel * delta;
+    outAngle = inAngle + rotSpeed * delta;
+    bool respawn = outLife <= 0.0 || outLife >= lifetime;
+    outPos = respawn? calcSpawnPosition(rndFactor.xyz, rndFactor.x) : outPos;
+    outAngle = respawn? mix(startAngle, startAngle2, rndFactor.x) : outAngle;
+    outVel = respawn? vec3(0.0) : outVel;
+    visMode = outLife < 0.0? -1.0: visMode;
+
+    writeOutput();
+}
+^AT^vertex_position,POSITION,^SH^particlefalse0false0false0false10nonefalsefalse2falsetruetrue^VS^attribute vec4 particle_vertexData; // XYZ = particle position, W = particle ID + random factor
+uniform mat4 matrix_viewProjection;
+uniform mat4 matrix_model;
+uniform mat3 matrix_normal;
+uniform mat4 matrix_viewInverse;
+uniform mat4 matrix_view;
+uniform float numParticles, numParticlesPot;
+uniform float graphSampleSize;
+uniform float graphNumSamples;
+uniform float stretch;
+uniform vec3 wrapBounds;
+uniform vec3 emitterScale, emitterPos;
+uniform float rate, rateDiv, lifetime, deltaRandomnessStatic, scaleDivMult, alphaDivMult, seed, delta;
+uniform sampler2D particleTexOUT, particleTexIN;
+uniform sampler2D internalTex0;
+uniform sampler2D internalTex1;
+uniform sampler2D internalTex2;
+varying vec4 texCoordsAlphaLife;
+vec3 inPos;
+vec3 inVel;
+float inAngle;
+bool inShow;
+float inLife;
+//RG=X, BA=Y
+//RG=Z, BA=A
+//RGB=V, A=visMode
+//RGBA=life
+#define PI2 6.283185307179586
+uniform vec3 inBoundsSize;
+uniform vec3 inBoundsCenter;
+uniform float maxVel;
+float decodeFloatRG(vec2 rg) {
+    return rg.y*(1.0/255.0) + rg.x;
+}
+float decodeFloatRGBA( vec4 rgba ) {
+  return dot( rgba, vec4(1.0, 1.0/255.0, 1.0/65025.0, 1.0/160581375.0) );
+}
+void readInput(float uv) {
+    vec4 tex0 = texture2D(particleTexIN, vec2(uv, 0.125));
+    vec4 tex1 = texture2D(particleTexIN, vec2(uv, 0.375));
+    vec4 tex2 = texture2D(particleTexIN, vec2(uv, 0.625));
+    vec4 tex3 = texture2D(particleTexIN, vec2(uv, 0.875));
+    inPos = vec3(decodeFloatRG(tex0.rg), decodeFloatRG(tex0.ba), decodeFloatRG(tex1.rg));
+    inPos = (inPos - vec3(0.5)) * inBoundsSize + inBoundsCenter;
+    inVel = tex2.xyz;
+    inVel = (inVel - vec3(0.5)) * maxVel;
+    inAngle = decodeFloatRG(tex1.ba) * PI2;
+    inShow = tex2.a > 0.5;
+    inLife = decodeFloatRGBA(tex3);
+    float maxNegLife = max(lifetime, (numParticles - 1.0) * (rate+rateDiv));
+    float maxPosLife = lifetime+1.0;
+    inLife = inLife * (maxNegLife + maxPosLife) - maxNegLife;
+}
+
+vec3 unpack3NFloats(float src) {
+    float r = fract(src);
+    float g = fract(src * 256.0);
+    float b = fract(src * 65536.0);
+    return vec3(r, g, b);
+}
+float saturate(float x) {
+    return clamp(x, 0.0, 1.0);
+}
+vec4 tex1Dlod_lerp(sampler2D tex, vec2 tc) {
+    return mix( texture2D(tex,tc), texture2D(tex,tc + graphSampleSize), fract(tc.x*graphNumSamples) );
+}
+vec4 tex1Dlod_lerp(sampler2D tex, vec2 tc, out vec3 w) {
+    vec4 a = texture2D(tex,tc);
+    vec4 b = texture2D(tex,tc + graphSampleSize);
+    float c = fract(tc.x*graphNumSamples);
+    vec3 unpackedA = unpack3NFloats(a.w);
+    vec3 unpackedB = unpack3NFloats(b.w);
+    w = mix(unpackedA, unpackedB, c);
+    return mix(a, b, c);
+}
+vec2 rotate(vec2 quadXY, float pRotation, out mat2 rotMatrix) {
+    float c = cos(pRotation);
+    float s = sin(pRotation);
+    mat2 m = mat2(c, -s, s, c);
+    rotMatrix = m;
+    return m * quadXY;
+}
+vec3 billboard(vec3 InstanceCoords, vec2 quadXY, out mat3 localMat) {
+    vec3 viewUp = matrix_viewInverse[1].xyz;
+    vec3 posCam = matrix_viewInverse[3].xyz;
+    mat3 billMat;
+    billMat[2] = normalize(InstanceCoords - posCam);
+    billMat[0] = normalize(cross(viewUp, billMat[2]));
+    billMat[1] = -viewUp;
+    vec3 pos = billMat * vec3(quadXY, 0);
+    localMat = billMat;
+    return pos;
+}
+void main(void) {
+    vec3 meshLocalPos = particle_vertexData.xyz;
+    float id = floor(particle_vertexData.w);
+    float rndFactor = fract(sin(id + 1.0 + seed));
+    vec3 rndFactor3 = vec3(rndFactor, fract(rndFactor*10.0), fract(rndFactor*100.0));
+    float uv = id / numParticlesPot;
+    readInput(uv);
+    vec2 velocityV = normalize((mat3(matrix_view) * inVel).xy); // should be removed by compiler if align/stretch is not used
+    float particleLifetime = lifetime;
+    if (inLife <= 0.0 || inLife > particleLifetime || !inShow) meshLocalPos = vec3(0.0);
+    vec2 quadXY = meshLocalPos.xy;
+    float nlife = clamp(inLife / particleLifetime, 0.0, 1.0);
+    vec3 paramDiv;
+    vec4 params = tex1Dlod_lerp(internalTex2, vec2(nlife, 0), paramDiv);
+    float scale = params.y;
+    float scaleDiv = paramDiv.x;
+    float alphaDiv = paramDiv.z;
+    scale += (scaleDiv * 2.0 - 1.0) * scaleDivMult * fract(rndFactor*10000.0);
+    texCoordsAlphaLife = vec4(quadXY * -0.5 + 0.5,    (alphaDiv * 2.0 - 1.0) * alphaDivMult * fract(rndFactor*1000.0),    nlife);
+    vec3 particlePos = inPos;
+    vec3 particlePosMoved = vec3(0.0);
+    mat2 rotMatrix;
+    mat3 localMat;
+
+    quadXY = rotate(quadXY, inAngle, rotMatrix);
+    vec3 localPos = billboard(particlePos, quadXY, localMat);
+
+    localPos *= scale * emitterScale;
+    localPos += particlePos;
+    gl_Position = matrix_viewProjection * vec4(localPos.xyz, 1.0);
+}
+^PS^precision highp float;
+
+
+vec3 gammaCorrectInput(vec3 color) {
+    return pow(color, vec3(2.2));
+}
+float gammaCorrectInput(float color) {
+    return pow(color, 2.2);
+}
+vec4 gammaCorrectInput(vec4 color) {
+    return vec4(pow(color.rgb, vec3(2.2)), color.a);
+}
+vec4 texture2DSRGB(sampler2D tex, vec2 uv) {
+    vec4 rgba = texture2D(tex, uv);
+    rgba.rgb = gammaCorrectInput(rgba.rgb);
+    return rgba;
+}
+vec4 textureCubeSRGB(samplerCube tex, vec3 uvw) {
+    vec4 rgba = textureCube(tex, uvw);
+    rgba.rgb = gammaCorrectInput(rgba.rgb);
+    return rgba;
+}
+vec3 gammaCorrectOutput(vec3 color) {
+    color += vec3(0.0000001);
+    return pow(color, vec3(0.45));
+}
+uniform float exposure;
+vec3 toneMap(vec3 color) {
+    return color * exposure;
+}
+vec3 addFog(vec3 color) {
+    return color;
+}
+varying vec4 texCoordsAlphaLife;
+uniform sampler2D colorMap;
+uniform sampler2D internalTex3;
+uniform float graphSampleSize;
+uniform float graphNumSamples;
+uniform float camera_far;
+uniform float softening;
+uniform float colorMult;
+float saturate(float x) {
+    return clamp(x, 0.0, 1.0);
+}
+float unpackFloat(vec4 rgbaDepth) {
+    const vec4 bitShift = vec4(1.0 / (256.0 * 256.0 * 256.0), 1.0 / (256.0 * 256.0), 1.0 / 256.0, 1.0);
+    float depth = dot(rgbaDepth, bitShift);
+    return depth;
+}
+void main(void) {
+    vec4 tex         = texture2DSRGB(colorMap, texCoordsAlphaLife.xy);
+    vec4 ramp     = texture2DSRGB(internalTex3, vec2(texCoordsAlphaLife.w, 0.0));
+    ramp.rgb *= colorMult;
+    ramp.a += texCoordsAlphaLife.z;
+    vec3 rgb =     tex.rgb * ramp.rgb;
+    float a =         tex.a * ramp.a;
+
+    if (a < 0.01) discard;
+    rgb = addFog(rgb);
+    rgb = toneMap(rgb);
+    rgb = gammaCorrectOutput(rgb);
+    gl_FragColor = vec4(rgb, a);
+}
+^AT^particle_vertexData,ATTR0,^SH^fsQuad00false^VS^attribute vec2 vertex_position;
+varying vec2 vUv0;
+void main(void)
+{
+    gl_Position = vec4(vertex_position, 0.5, 1.0);
+    vUv0 = vertex_position.xy*0.5+0.5;
+}
+^PS^precision highp float;
+
+
+varying vec2 vUv0;
+uniform sampler2D particleTexIN;
+uniform sampler2D internalTex0;
+uniform sampler2D internalTex1;
+uniform sampler2D internalTex2;
+uniform mat3 emitterMatrix;
+uniform vec3 emitterScale;
+uniform vec3 emitterPos, frameRandom, localVelocityDivMult, velocityDivMult;
+uniform float delta, rate, rateDiv, lifetime, numParticles, rotSpeedDivMult, seed;
+uniform float startAngle, startAngle2;
+uniform float initialVelocity;
+uniform float graphSampleSize;
+uniform float graphNumSamples;
+vec3 inPos;
+vec3 inVel;
+float inAngle;
+bool inShow;
+float inLife;
+float visMode;
+vec3 outPos;
+vec3 outVel;
+float outAngle;
+bool outShow;
+float outLife;
+void readInput(float uv) {
+    vec4 tex = texture2D(particleTexIN, vec2(uv, 0.25));
+    vec4 tex2 = texture2D(particleTexIN, vec2(uv, 0.75));
+    inPos = tex.xyz;
+    inVel = tex2.xyz;
+    inAngle = (tex.w < 0.0? -tex.w : tex.w) - 1000.0;
+    inShow = tex.w >= 0.0;
+    inLife = tex2.w;
+}
+void writeOutput() {
+    if (gl_FragCoord.y<1.0) {
+        gl_FragColor = vec4(outPos, (outAngle + 1000.0) * visMode);
+    } else {
+        gl_FragColor = vec4(outVel, outLife);
+    }
+}
+uniform mat3 spawnBounds;
+vec3 calcSpawnPosition(vec3 inBounds, float rndFactor) {
+    return emitterPos + spawnBounds * (inBounds - vec3(0.5));
+}
+void addInitialVelocity(inout vec3 localVelocity, vec3 inBounds) {
+    localVelocity -= vec3(0, 0, initialVelocity);
+}
+float saturate(float x) {
+    return clamp(x, 0.0, 1.0);
+}
+vec3 unpack3NFloats(float src) {
+    float r = fract(src);
+    float g = fract(src * 256.0);
+    float b = fract(src * 65536.0);
+    return vec3(r, g, b);
+}
+vec3 tex1Dlod_lerp(sampler2D tex, vec2 tc, out vec3 w) {
+    vec4 a = texture2D(tex, tc);
+    vec4 b = texture2D(tex, tc + graphSampleSize);
+    float c = fract(tc.x * graphNumSamples);
+    vec3 unpackedA = unpack3NFloats(a.w);
+    vec3 unpackedB = unpack3NFloats(b.w);
+    w = mix(unpackedA, unpackedB, c);
+    return mix(a.xyz, b.xyz, c);
+}
+#define HASHSCALE4 vec4(1031, .1030, .0973, .1099)
+vec4 hash41(float p) {
+    vec4 p4 = fract(vec4(p) * HASHSCALE4);
+    p4 += dot(p4, p4.wzxy+19.19);
+    return fract(vec4((p4.x + p4.y)*p4.z, (p4.x + p4.z)*p4.y, (p4.y + p4.z)*p4.w, (p4.z + p4.w)*p4.x));
+}
+void main(void)
+{
+    if (gl_FragCoord.x > numParticles) discard;
+    readInput(vUv0.x);
+    visMode = inShow? 1.0 : -1.0;
+    vec4 rndFactor = hash41(gl_FragCoord.x + seed);
+    float particleRate = rate + rateDiv * rndFactor.x;
+    outLife = inLife + delta;
+    float nlife = clamp(outLife / lifetime, 0.0, 1.0);
+    vec3 localVelocityDiv;
+    vec3 velocityDiv;
+    vec3 paramDiv;
+    vec3 localVelocity = tex1Dlod_lerp(internalTex0, vec2(nlife, 0), localVelocityDiv);
+    vec3 velocity =      tex1Dlod_lerp(internalTex1, vec2(nlife, 0), velocityDiv);
+    vec3 params =        tex1Dlod_lerp(internalTex2, vec2(nlife, 0), paramDiv);
+    float rotSpeed = params.x;
+    float rotSpeedDiv = paramDiv.y;
+    localVelocity +=    (localVelocityDiv * vec3(2.0) - vec3(1.0)) * localVelocityDivMult * rndFactor.xyz;
+    velocity +=         (velocityDiv * vec3(2.0) - vec3(1.0)) * velocityDivMult * rndFactor.xyz;
+    rotSpeed +=         (rotSpeedDiv * 2.0 - 1.0) * rotSpeedDivMult * rndFactor.y;
+    addInitialVelocity(localVelocity, rndFactor.xyz);
+    outVel = emitterMatrix * localVelocity.xyz + velocity.xyz * emitterScale;
+    outPos = inPos + outVel * delta;
+    outAngle = inAngle + rotSpeed * delta;
+    bool respawn = outLife <= 0.0 || outLife >= lifetime;
+    outPos = respawn? calcSpawnPosition(rndFactor.xyz, rndFactor.x) : outPos;
+    outAngle = respawn? mix(startAngle, startAngle2, rndFactor.x) : outAngle;
+    outVel = respawn? vec3(0.0) : outVel;
+    if (outLife >= lifetime) {
+        outLife -= max(lifetime, (numParticles - 1.0) * particleRate);
+        visMode = 1.0;
+    }
+    visMode = outLife < 0.0? 1.0: visMode;
+
+    writeOutput();
+}
+^AT^vertex_position,POSITION,^SH^fsQuad10false^VS^attribute vec2 vertex_position;
+varying vec2 vUv0;
+void main(void)
+{
+    gl_Position = vec4(vertex_position, 0.5, 1.0);
+    vUv0 = vertex_position.xy*0.5+0.5;
+}
+^PS^precision highp float;
+
+
+varying vec2 vUv0;
+uniform sampler2D particleTexIN;
+uniform sampler2D internalTex0;
+uniform sampler2D internalTex1;
+uniform sampler2D internalTex2;
+uniform mat3 emitterMatrix;
+uniform vec3 emitterScale;
+uniform vec3 emitterPos, frameRandom, localVelocityDivMult, velocityDivMult;
+uniform float delta, rate, rateDiv, lifetime, numParticles, rotSpeedDivMult, seed;
+uniform float startAngle, startAngle2;
+uniform float initialVelocity;
+uniform float graphSampleSize;
+uniform float graphNumSamples;
+vec3 inPos;
+vec3 inVel;
+float inAngle;
+bool inShow;
+float inLife;
+float visMode;
+vec3 outPos;
+vec3 outVel;
+float outAngle;
+bool outShow;
+float outLife;
+void readInput(float uv) {
+    vec4 tex = texture2D(particleTexIN, vec2(uv, 0.25));
+    vec4 tex2 = texture2D(particleTexIN, vec2(uv, 0.75));
+    inPos = tex.xyz;
+    inVel = tex2.xyz;
+    inAngle = (tex.w < 0.0? -tex.w : tex.w) - 1000.0;
+    inShow = tex.w >= 0.0;
+    inLife = tex2.w;
+}
+void writeOutput() {
+    if (gl_FragCoord.y<1.0) {
+        gl_FragColor = vec4(outPos, (outAngle + 1000.0) * visMode);
+    } else {
+        gl_FragColor = vec4(outVel, outLife);
+    }
+}
+uniform mat3 spawnBounds;
+vec3 calcSpawnPosition(vec3 inBounds, float rndFactor) {
+    return emitterPos + spawnBounds * (inBounds - vec3(0.5));
+}
+void addInitialVelocity(inout vec3 localVelocity, vec3 inBounds) {
+    localVelocity -= vec3(0, 0, initialVelocity);
+}
+float saturate(float x) {
+    return clamp(x, 0.0, 1.0);
+}
+vec3 unpack3NFloats(float src) {
+    float r = fract(src);
+    float g = fract(src * 256.0);
+    float b = fract(src * 65536.0);
+    return vec3(r, g, b);
+}
+vec3 tex1Dlod_lerp(sampler2D tex, vec2 tc, out vec3 w) {
+    vec4 a = texture2D(tex, tc);
+    vec4 b = texture2D(tex, tc + graphSampleSize);
+    float c = fract(tc.x * graphNumSamples);
+    vec3 unpackedA = unpack3NFloats(a.w);
+    vec3 unpackedB = unpack3NFloats(b.w);
+    w = mix(unpackedA, unpackedB, c);
+    return mix(a.xyz, b.xyz, c);
+}
+#define HASHSCALE4 vec4(1031, .1030, .0973, .1099)
+vec4 hash41(float p) {
+    vec4 p4 = fract(vec4(p) * HASHSCALE4);
+    p4 += dot(p4, p4.wzxy+19.19);
+    return fract(vec4((p4.x + p4.y)*p4.z, (p4.x + p4.z)*p4.y, (p4.y + p4.z)*p4.w, (p4.z + p4.w)*p4.x));
+}
+void main(void)
+{
+    if (gl_FragCoord.x > numParticles) discard;
+    readInput(vUv0.x);
+    visMode = inShow? 1.0 : -1.0;
+    vec4 rndFactor = hash41(gl_FragCoord.x + seed);
+    float particleRate = rate + rateDiv * rndFactor.x;
+    outLife = inLife + delta;
+    float nlife = clamp(outLife / lifetime, 0.0, 1.0);
+    vec3 localVelocityDiv;
+    vec3 velocityDiv;
+    vec3 paramDiv;
+    vec3 localVelocity = tex1Dlod_lerp(internalTex0, vec2(nlife, 0), localVelocityDiv);
+    vec3 velocity =      tex1Dlod_lerp(internalTex1, vec2(nlife, 0), velocityDiv);
+    vec3 params =        tex1Dlod_lerp(internalTex2, vec2(nlife, 0), paramDiv);
+    float rotSpeed = params.x;
+    float rotSpeedDiv = paramDiv.y;
+    localVelocity +=    (localVelocityDiv * vec3(2.0) - vec3(1.0)) * localVelocityDivMult * rndFactor.xyz;
+    velocity +=         (velocityDiv * vec3(2.0) - vec3(1.0)) * velocityDivMult * rndFactor.xyz;
+    rotSpeed +=         (rotSpeedDiv * 2.0 - 1.0) * rotSpeedDivMult * rndFactor.y;
+    addInitialVelocity(localVelocity, rndFactor.xyz);
+    outVel = emitterMatrix * localVelocity.xyz + velocity.xyz * emitterScale;
+    outPos = inPos + outVel * delta;
+    outAngle = inAngle + rotSpeed * delta;
+    bool respawn = outLife <= 0.0 || outLife >= lifetime;
+    outPos = respawn? calcSpawnPosition(rndFactor.xyz, rndFactor.x) : outPos;
+    outAngle = respawn? mix(startAngle, startAngle2, rndFactor.x) : outAngle;
+    outVel = respawn? vec3(0.0) : outVel;
+    if (outLife >= lifetime) {
+        outLife -= max(lifetime, (numParticles - 1.0) * particleRate);
+        visMode = -1.0;
+    }
+
+    writeOutput();
+}
+^AT^vertex_position,POSITION,^SH^fsQuad20false^VS^attribute vec2 vertex_position;
+varying vec2 vUv0;
+void main(void)
+{
+    gl_Position = vec4(vertex_position, 0.5, 1.0);
+    vUv0 = vertex_position.xy*0.5+0.5;
+}
+^PS^precision highp float;
+
+
+varying vec2 vUv0;
+uniform sampler2D particleTexIN;
+uniform sampler2D internalTex0;
+uniform sampler2D internalTex1;
+uniform sampler2D internalTex2;
+uniform mat3 emitterMatrix;
+uniform vec3 emitterScale;
+uniform vec3 emitterPos, frameRandom, localVelocityDivMult, velocityDivMult;
+uniform float delta, rate, rateDiv, lifetime, numParticles, rotSpeedDivMult, seed;
+uniform float startAngle, startAngle2;
+uniform float initialVelocity;
+uniform float graphSampleSize;
+uniform float graphNumSamples;
+vec3 inPos;
+vec3 inVel;
+float inAngle;
+bool inShow;
+float inLife;
+float visMode;
+vec3 outPos;
+vec3 outVel;
+float outAngle;
+bool outShow;
+float outLife;
+void readInput(float uv) {
+    vec4 tex = texture2D(particleTexIN, vec2(uv, 0.25));
+    vec4 tex2 = texture2D(particleTexIN, vec2(uv, 0.75));
+    inPos = tex.xyz;
+    inVel = tex2.xyz;
+    inAngle = (tex.w < 0.0? -tex.w : tex.w) - 1000.0;
+    inShow = tex.w >= 0.0;
+    inLife = tex2.w;
+}
+void writeOutput() {
+    if (gl_FragCoord.y<1.0) {
+        gl_FragColor = vec4(outPos, (outAngle + 1000.0) * visMode);
+    } else {
+        gl_FragColor = vec4(outVel, outLife);
+    }
+}
+uniform mat3 spawnBounds;
+vec3 calcSpawnPosition(vec3 inBounds, float rndFactor) {
+    return emitterPos + spawnBounds * (inBounds - vec3(0.5));
+}
+void addInitialVelocity(inout vec3 localVelocity, vec3 inBounds) {
+    localVelocity -= vec3(0, 0, initialVelocity);
+}
+float saturate(float x) {
+    return clamp(x, 0.0, 1.0);
+}
+vec3 unpack3NFloats(float src) {
+    float r = fract(src);
+    float g = fract(src * 256.0);
+    float b = fract(src * 65536.0);
+    return vec3(r, g, b);
+}
+vec3 tex1Dlod_lerp(sampler2D tex, vec2 tc, out vec3 w) {
+    vec4 a = texture2D(tex, tc);
+    vec4 b = texture2D(tex, tc + graphSampleSize);
+    float c = fract(tc.x * graphNumSamples);
+    vec3 unpackedA = unpack3NFloats(a.w);
+    vec3 unpackedB = unpack3NFloats(b.w);
+    w = mix(unpackedA, unpackedB, c);
+    return mix(a.xyz, b.xyz, c);
+}
+#define HASHSCALE4 vec4(1031, .1030, .0973, .1099)
+vec4 hash41(float p) {
+    vec4 p4 = fract(vec4(p) * HASHSCALE4);
+    p4 += dot(p4, p4.wzxy+19.19);
+    return fract(vec4((p4.x + p4.y)*p4.z, (p4.x + p4.z)*p4.y, (p4.y + p4.z)*p4.w, (p4.z + p4.w)*p4.x));
+}
+void main(void)
+{
+    if (gl_FragCoord.x > numParticles) discard;
+    readInput(vUv0.x);
+    visMode = inShow? 1.0 : -1.0;
+    vec4 rndFactor = hash41(gl_FragCoord.x + seed);
+    float particleRate = rate + rateDiv * rndFactor.x;
+    outLife = inLife + delta;
+    float nlife = clamp(outLife / lifetime, 0.0, 1.0);
+    vec3 localVelocityDiv;
+    vec3 velocityDiv;
+    vec3 paramDiv;
+    vec3 localVelocity = tex1Dlod_lerp(internalTex0, vec2(nlife, 0), localVelocityDiv);
+    vec3 velocity =      tex1Dlod_lerp(internalTex1, vec2(nlife, 0), velocityDiv);
+    vec3 params =        tex1Dlod_lerp(internalTex2, vec2(nlife, 0), paramDiv);
+    float rotSpeed = params.x;
+    float rotSpeedDiv = paramDiv.y;
+    localVelocity +=    (localVelocityDiv * vec3(2.0) - vec3(1.0)) * localVelocityDivMult * rndFactor.xyz;
+    velocity +=         (velocityDiv * vec3(2.0) - vec3(1.0)) * velocityDivMult * rndFactor.xyz;
+    rotSpeed +=         (rotSpeedDiv * 2.0 - 1.0) * rotSpeedDivMult * rndFactor.y;
+    addInitialVelocity(localVelocity, rndFactor.xyz);
+    outVel = emitterMatrix * localVelocity.xyz + velocity.xyz * emitterScale;
+    outPos = inPos + outVel * delta;
+    outAngle = inAngle + rotSpeed * delta;
+    bool respawn = outLife <= 0.0 || outLife >= lifetime;
+    outPos = respawn? calcSpawnPosition(rndFactor.xyz, rndFactor.x) : outPos;
+    outAngle = respawn? mix(startAngle, startAngle2, rndFactor.x) : outAngle;
+    outVel = respawn? vec3(0.0) : outVel;
+    visMode = outLife < 0.0? -1.0: visMode;
+
+    writeOutput();
+}
+^AT^vertex_position,POSITION,^SH^particletrue0false0false0false10nonefalsefalse2falsetruefalse^VS^attribute vec4 particle_vertexData;     // XYZ = world pos, W = life
+attribute vec4 particle_vertexData2;     // X = angle, Y = scale, Z = alpha, W = velocity.x
+attribute vec4 particle_vertexData3;     // XYZ = particle local pos, W = velocity.y
+attribute vec2 particle_vertexData4;     // X = velocity.z, W = particle ID
+uniform mat4 matrix_viewProjection;
+uniform mat4 matrix_model;
+uniform mat4 matrix_view;
+uniform mat3 matrix_normal;
+uniform mat4 matrix_viewInverse;
+uniform float numParticles;
+uniform float lifetime;
+uniform float stretch;
+//uniform float graphSampleSize;
+//uniform float graphNumSamples;
+uniform vec3 wrapBounds, emitterScale;
+uniform sampler2D texLifeAndSourcePosOUT;
+uniform sampler2D internalTex0;
+uniform sampler2D internalTex1;
+uniform sampler2D internalTex2;
+uniform vec3 emitterPos;
+varying vec4 texCoordsAlphaLife;
+vec2 rotate(vec2 quadXY, float pRotation, out mat2 rotMatrix)
+{
+    float c = cos(pRotation);
+    float s = sin(pRotation);
+    //vec4 rotationMatrix = vec4(c, -s, s, c);
+    mat2 m = mat2(c, -s, s, c);
+    rotMatrix = m;
+    return m * quadXY;
+}
+vec3 billboard(vec3 InstanceCoords, vec2 quadXY, out mat3 localMat)
+{
+    vec3 viewUp = matrix_viewInverse[1].xyz;
+    vec3 posCam = matrix_viewInverse[3].xyz;
+    mat3 billMat;
+    billMat[2] = normalize(InstanceCoords - posCam);
+    billMat[0] = normalize(cross(viewUp, billMat[2]));
+    billMat[1] = -viewUp;
+    vec3 pos = billMat * vec3(quadXY, 0);
+    localMat = billMat;
+    return pos;
+}
+void main(void)
+{
+    vec3 particlePos = particle_vertexData.xyz;
+    vec3 inPos = particlePos;
+    vec3 vertPos = particle_vertexData3.xyz;
+    vec3 inVel = vec3(particle_vertexData2.w, particle_vertexData3.w, particle_vertexData4.x);
+    vec2 velocityV = normalize((mat3(matrix_view) * inVel).xy); // should be removed by compiler if align/stretch is not used
+    vec2 quadXY = vertPos.xy;
+    texCoordsAlphaLife = vec4(quadXY * -0.5 + 0.5, particle_vertexData2.z, particle_vertexData.w);
+    mat2 rotMatrix;
+    mat3 localMat;
+    float inAngle = particle_vertexData2.x;
+    vec3 particlePosMoved = vec3(0.0);
+    vec3 meshLocalPos = particle_vertexData3.xyz;
+
+    quadXY = rotate(quadXY, inAngle, rotMatrix);
+    vec3 localPos = billboard(particlePos, quadXY, localMat);
+
+    localPos *= particle_vertexData2.y * emitterScale;
+    localPos += particlePos;
+    gl_Position = matrix_viewProjection * vec4(localPos, 1.0);
+}
+^PS^precision highp float;
+
+
+vec3 gammaCorrectInput(vec3 color) {
+    return pow(color, vec3(2.2));
+}
+float gammaCorrectInput(float color) {
+    return pow(color, 2.2);
+}
+vec4 gammaCorrectInput(vec4 color) {
+    return vec4(pow(color.rgb, vec3(2.2)), color.a);
+}
+vec4 texture2DSRGB(sampler2D tex, vec2 uv) {
+    vec4 rgba = texture2D(tex, uv);
+    rgba.rgb = gammaCorrectInput(rgba.rgb);
+    return rgba;
+}
+vec4 textureCubeSRGB(samplerCube tex, vec3 uvw) {
+    vec4 rgba = textureCube(tex, uvw);
+    rgba.rgb = gammaCorrectInput(rgba.rgb);
+    return rgba;
+}
+vec3 gammaCorrectOutput(vec3 color) {
+    color += vec3(0.0000001);
+    return pow(color, vec3(0.45));
+}
+uniform float exposure;
+vec3 toneMap(vec3 color) {
+    return color * exposure;
+}
+vec3 addFog(vec3 color) {
+    return color;
+}
+varying vec4 texCoordsAlphaLife;
+uniform sampler2D colorMap;
+uniform sampler2D internalTex3;
+uniform float graphSampleSize;
+uniform float graphNumSamples;
+uniform float camera_far;
+uniform float softening;
+uniform float colorMult;
+float saturate(float x) {
+    return clamp(x, 0.0, 1.0);
+}
+float unpackFloat(vec4 rgbaDepth) {
+    const vec4 bitShift = vec4(1.0 / (256.0 * 256.0 * 256.0), 1.0 / (256.0 * 256.0), 1.0 / 256.0, 1.0);
+    float depth = dot(rgbaDepth, bitShift);
+    return depth;
+}
+void main(void) {
+    vec4 tex         = texture2DSRGB(colorMap, texCoordsAlphaLife.xy);
+    vec4 ramp     = texture2DSRGB(internalTex3, vec2(texCoordsAlphaLife.w, 0.0));
+    ramp.rgb *= colorMult;
+    ramp.a += texCoordsAlphaLife.z;
+    vec3 rgb =     tex.rgb * ramp.rgb;
+    float a =         tex.a * ramp.a;
+
+    if (a < 0.01) discard;
+    rgb = addFog(rgb);
+    rgb = toneMap(rgb);
+    rgb = gammaCorrectOutput(rgb);
+    gl_FragColor = vec4(rgb, a);
+}
+^AT^particle_vertexData,ATTR0,particle_vertexData2,ATTR1,particle_vertexData3,ATTR2,particle_vertexData4,ATTR3,^SH^ptest1^VS^attribute vec2 vertex_position;
+varying vec2 vUv0;
+void main(void)
+{
+    gl_Position = vec4(vertex_position, 0.5, 1.0);
+    vUv0 = vertex_position.xy*0.5+0.5;
+}
+^PS^precision highp float;
+
+
+void main(void) {
+    gl_FragColor = vec4(2147483648.0);
+}
+^AT^vertex_position,POSITION,^SH^ptest2^VS^attribute vec2 vertex_position;
+varying vec2 vUv0;
+void main(void)
+{
+    gl_Position = vec4(vertex_position, 0.5, 1.0);
+    vUv0 = vertex_position.xy*0.5+0.5;
+}
+^PS^precision highp float;
+
+
+uniform sampler2D source;
+vec4 packFloat(float depth) {
+    const vec4 bit_shift = vec4(256.0 * 256.0 * 256.0, 256.0 * 256.0, 256.0, 1.0);
+    const vec4 bit_mask  = vec4(0.0, 1.0 / 256.0, 1.0 / 256.0, 1.0 / 256.0);
+    vec4 res = mod(depth * bit_shift * vec4(255), vec4(256) ) / vec4(255);
+    res -= res.xxyz * bit_mask;
+    return res;
+}
+void main(void) {
+    float c = texture2D(source, vec2(0.0)).r;
+    float diff = abs(c - 2147483648.0) / 2147483648.0;
+    gl_FragColor = packFloat(diff);
+}
+^AT^vertex_position,POSITION,^SH^-1387688144^VS^varying vec3 vPositionW;
+varying vec2 vUv0;
+
+
+
+attribute vec3 vertex_position;
+attribute vec3 vertex_normal;
+attribute vec4 vertex_tangent;
+attribute vec2 vertex_texCoord0;
+attribute vec2 vertex_texCoord1;
+attribute vec4 vertex_color;
+uniform mat4 matrix_viewProjection;
+uniform mat4 matrix_model;
+uniform mat3 matrix_normal;
+vec3 dPositionW;
+mat4 dModelMatrix;
+mat3 dNormalMatrix;
+vec3 dLightPosW;
+vec3 dLightDirNormW;
+vec3 dNormalW;
+
+vec2 getUv0() {
+    return vertex_texCoord0;
+}
+mat4 getModelMatrix() {
+    return matrix_model;
+}
+vec4 getPosition() {
+    dModelMatrix = getModelMatrix();
+    vec4 posW = dModelMatrix * vec4(vertex_position, 1.0);
+    dPositionW = posW.xyz;
+    return matrix_viewProjection * posW;
+}
+vec3 getWorldPosition() {
+    return dPositionW;
+}
+
+
+void main(void) {
+    gl_Position = getPosition();
+   vPositionW    = getWorldPosition();
+   vec2 uv0 = getUv0();
+   vUv0 = uv0;
+}^PS^#extension GL_OES_standard_derivatives : enable
+
+precision highp float;
+
+varying vec3 vPositionW;
+varying vec2 vUv0;
+
+uniform vec3 view_position;
+uniform vec3 light_globalAmbient;
+float square(float x) {
+    return x*x;
+}
+float saturate(float x) {
+    return clamp(x, 0.0, 1.0);
+}
+vec3 saturate(vec3 x) {
+    return clamp(x, vec3(0.0), vec3(1.0));
+}
+vec4 dReflection;
+vec3 dAlbedo;
+vec3 dNormalW;
+vec3 dViewDirW;
+vec3 dDiffuseLight;
+vec3 dSpecularLight;
+vec3 dLightDirNormW;
+vec3 dSpecularity;
+float dGlossiness;
+float dAlpha;
+
+vec4 texture2DSRGB(sampler2D tex, vec2 uv) {
+    return texture2D(tex, uv);
+}
+vec4 textureCubeSRGB(samplerCube tex, vec3 uvw) {
+    return textureCube(tex, uvw);
+}
+vec3 gammaCorrectOutput(vec3 color) {
+    return color;
+}
+vec3 gammaCorrectInput(vec3 color) {
+    return color;
+}
+float gammaCorrectInput(float color) {
+    return color;
+}
+vec4 gammaCorrectInput(vec4 color) {
+    return color;
+}
+vec3 toneMap(vec3 color) {
+    return color;
+}
+vec3 addFog(vec3 color) {
+    return color;
+}
+uniform vec3 material_diffuse;
+void getAlbedo() {
+    dAlbedo = material_diffuse.rgb;
+}
+uniform sampler2D texture_emissiveMap;
+vec3 getEmission() {
+    return texture2DSRGB(texture_emissiveMap, vUv0).rgb;
+}
+float antiAliasGlossiness(float power) {
+    return power;
+}
+uniform vec3 material_specular;
+void getSpecularity() {
+    dSpecularity = material_specular;
+}
+uniform float material_shininess;
+void getGlossiness() {
+    dGlossiness = material_shininess + 0.0000001;
+}
+// Schlick's approximation
+uniform float material_fresnelFactor; // unused
+void getFresnel() {
+    float fresnel = 1.0 - max(dot(dNormalW, dViewDirW), 0.0);
+    float fresnel2 = fresnel * fresnel;
+    fresnel *= fresnel2 * fresnel2;
+    fresnel *= dGlossiness * dGlossiness;
+    dSpecularity = dSpecularity + (1.0 - dSpecularity) * fresnel;
+}
+// Energy-conserving (hopefully) Blinn-Phong
+float getLightSpecular() {
+    vec3 h = normalize( -dLightDirNormW + dViewDirW );
+    float nh = max( dot( h, dNormalW ), 0.0 );
+    float specPow = exp2(dGlossiness * 11.0); // glossiness is linear, power is not; 0 - 2048
+    specPow = antiAliasGlossiness(specPow);
+    // Hack: On Mac OS X, calling pow with zero for the exponent generates hideous artifacts so bias up a little
+    specPow = max(specPow, 0.0001);
+    return pow(nh, specPow) * (specPow + 2.0) / 8.0;
+}
+vec3 combineColor() {
+    return mix(dAlbedo * dDiffuseLight, dSpecularLight + dReflection.rgb * dReflection.a, dSpecularity);
+}
+
+void addAmbient() {
+    dDiffuseLight += light_globalAmbient;
+}
+
+void main(void) {
+    dDiffuseLight = vec3(0);
+    dSpecularLight = vec3(0);
+    dReflection = vec4(0);
+    dSpecularity = vec3(0);
+   dAlpha = 1.0;
+   getAlbedo();
+   addAmbient();
+
+   gl_FragColor.rgb = combineColor();
+   gl_FragColor.rgb += getEmission();
+   gl_FragColor.rgb = addFog(gl_FragColor.rgb);
+   gl_FragColor.rgb = toneMap(gl_FragColor.rgb);
+   gl_FragColor.rgb = gammaCorrectOutput(gl_FragColor.rgb);
+gl_FragColor.a = 1.0;
+
+}
+^AT^vertex_position,POSITION,vertex_texCoord0,TEXCOORD0,^SH^basic_vcol^VS^attribute vec3 vertex_position;
+uniform mat4 matrix_model;
+uniform mat4 matrix_viewProjection;
+vec3 dPositionW;
+mat4 dModelMatrix;
+mat4 getModelMatrix() {
+    return matrix_model;
+}
+vec4 getPosition() {
+    dModelMatrix = getModelMatrix();
+    vec4 posW = dModelMatrix * vec4(vertex_position, 1.0);
+    dPositionW = posW.xyz;
+    return matrix_viewProjection * posW;
+}
+vec3 getWorldPosition() {
+    return dPositionW;
+}
+attribute vec4 vertex_color;
+varying vec4 vColor;
+void main(void)
+{
+   gl_Position = getPosition();
+    vColor = vertex_color;
+}
+^PS^precision highp float;
+
+varying vec4 vColor;
+void main(void)
+{
+    gl_FragColor = vColor;
+}
+^AT^vertex_position,POSITION,vertex_color,COLOR,^SH^-2130694354^VS^varying vec3 vPositionW;
+varying vec2 vUv0;
+
+
+
+attribute vec3 vertex_position;
+attribute vec3 vertex_normal;
+attribute vec4 vertex_tangent;
+attribute vec2 vertex_texCoord0;
+attribute vec2 vertex_texCoord1;
+attribute vec4 vertex_color;
+uniform mat4 matrix_viewProjection;
+uniform mat4 matrix_model;
+uniform mat3 matrix_normal;
+vec3 dPositionW;
+mat4 dModelMatrix;
+mat3 dNormalMatrix;
+vec3 dLightPosW;
+vec3 dLightDirNormW;
+vec3 dNormalW;
+
+vec2 getUv0() {
+    return vertex_texCoord0;
+}
+mat4 getModelMatrix() {
+    return matrix_model;
+}
+vec4 getPosition() {
+    dModelMatrix = getModelMatrix();
+    vec4 posW = dModelMatrix * vec4(vertex_position, 1.0);
+    dPositionW = posW.xyz;
+    return matrix_viewProjection * posW;
+}
+vec3 getWorldPosition() {
+    return dPositionW;
+}
+
+
+void main(void) {
+    gl_Position = getPosition();
+   vPositionW    = getWorldPosition();
+   vec2 uv0 = getUv0();
+   vUv0 = uv0;
+}^PS^#extension GL_OES_standard_derivatives : enable
+
+precision highp float;
+
+varying vec3 vPositionW;
+varying vec2 vUv0;
+
+uniform vec3 view_position;
+uniform vec3 light_globalAmbient;
+float square(float x) {
+    return x*x;
+}
+float saturate(float x) {
+    return clamp(x, 0.0, 1.0);
+}
+vec3 saturate(vec3 x) {
+    return clamp(x, vec3(0.0), vec3(1.0));
+}
+vec4 dReflection;
+vec3 dAlbedo;
+vec3 dNormalW;
+vec3 dViewDirW;
+vec3 dDiffuseLight;
+vec3 dSpecularLight;
+vec3 dLightDirNormW;
+vec3 dSpecularity;
+float dGlossiness;
+float dAlpha;
+
+vec4 texture2DSRGB(sampler2D tex, vec2 uv) {
+    return texture2D(tex, uv);
+}
+vec4 textureCubeSRGB(samplerCube tex, vec3 uvw) {
+    return textureCube(tex, uvw);
+}
+vec3 gammaCorrectOutput(vec3 color) {
+    return color;
+}
+vec3 gammaCorrectInput(vec3 color) {
+    return color;
+}
+float gammaCorrectInput(float color) {
+    return color;
+}
+vec4 gammaCorrectInput(vec4 color) {
+    return color;
+}
+vec3 toneMap(vec3 color) {
+    return color;
+}
+vec3 addFog(vec3 color) {
+    return color;
+}
+uniform vec3 material_diffuse;
+void getAlbedo() {
+    dAlbedo = material_diffuse.rgb;
+}
+uniform sampler2D texture_opacityMap;
+void getOpacity() {
+    dAlpha = texture2D(texture_opacityMap, vUv0).a;
+}
+uniform sampler2D texture_emissiveMap;
+vec3 getEmission() {
+    return texture2DSRGB(texture_emissiveMap, vUv0).rgb;
+}
+float antiAliasGlossiness(float power) {
+    return power;
+}
+uniform vec3 material_specular;
+void getSpecularity() {
+    dSpecularity = material_specular;
+}
+uniform float material_shininess;
+void getGlossiness() {
+    dGlossiness = material_shininess + 0.0000001;
+}
+// Schlick's approximation
+uniform float material_fresnelFactor; // unused
+void getFresnel() {
+    float fresnel = 1.0 - max(dot(dNormalW, dViewDirW), 0.0);
+    float fresnel2 = fresnel * fresnel;
+    fresnel *= fresnel2 * fresnel2;
+    fresnel *= dGlossiness * dGlossiness;
+    dSpecularity = dSpecularity + (1.0 - dSpecularity) * fresnel;
+}
+// Energy-conserving (hopefully) Blinn-Phong
+float getLightSpecular() {
+    vec3 h = normalize( -dLightDirNormW + dViewDirW );
+    float nh = max( dot( h, dNormalW ), 0.0 );
+    float specPow = exp2(dGlossiness * 11.0); // glossiness is linear, power is not; 0 - 2048
+    specPow = antiAliasGlossiness(specPow);
+    // Hack: On Mac OS X, calling pow with zero for the exponent generates hideous artifacts so bias up a little
+    specPow = max(specPow, 0.0001);
+    return pow(nh, specPow) * (specPow + 2.0) / 8.0;
+}
+vec3 combineColor() {
+    return mix(dAlbedo * dDiffuseLight, dSpecularLight + dReflection.rgb * dReflection.a, dSpecularity);
+}
+
+void addAmbient() {
+    dDiffuseLight += light_globalAmbient;
+}
+
+void main(void) {
+    dDiffuseLight = vec3(0);
+    dSpecularLight = vec3(0);
+    dReflection = vec4(0);
+    dSpecularity = vec3(0);
+   getOpacity();
+   getAlbedo();
+   addAmbient();
+
+   gl_FragColor.rgb = combineColor();
+   gl_FragColor.rgb += getEmission();
+   gl_FragColor.rgb = addFog(gl_FragColor.rgb);
+   gl_FragColor.rgb = toneMap(gl_FragColor.rgb);
+   gl_FragColor.rgb = gammaCorrectOutput(gl_FragColor.rgb);
+gl_FragColor.a = dAlpha;
+
+}
+^AT^vertex_position,POSITION,vertex_texCoord0,TEXCOORD0,^SH^-1871940038^VS^varying vec3 vPositionW;
+varying vec2 vUv0;
+
+
+
+attribute vec3 vertex_position;
+attribute vec3 vertex_normal;
+attribute vec4 vertex_tangent;
+attribute vec2 vertex_texCoord0;
+attribute vec2 vertex_texCoord1;
+attribute vec4 vertex_color;
+uniform mat4 matrix_viewProjection;
+uniform mat4 matrix_model;
+uniform mat3 matrix_normal;
+vec3 dPositionW;
+mat4 dModelMatrix;
+mat3 dNormalMatrix;
+vec3 dLightPosW;
+vec3 dLightDirNormW;
+vec3 dNormalW;
+
+vec2 getUv0() {
+    return vertex_texCoord0;
+}
+mat4 getModelMatrix() {
+    return matrix_model;
+}
+vec4 getPosition() {
+    dModelMatrix = getModelMatrix();
+    vec4 posW = dModelMatrix * vec4(vertex_position, 1.0);
+    dPositionW = posW.xyz;
+    return matrix_viewProjection * posW;
+}
+vec3 getWorldPosition() {
+    return dPositionW;
+}
+
+
+void main(void) {
+    gl_Position = getPosition();
+   vPositionW    = getWorldPosition();
+   vec2 uv0 = getUv0();
+   vUv0 = uv0;
+}^PS^#extension GL_OES_standard_derivatives : enable
+
+precision highp float;
+
+varying vec3 vPositionW;
+varying vec2 vUv0;
+
+uniform vec3 view_position;
+uniform vec3 light_globalAmbient;
+float square(float x) {
+    return x*x;
+}
+float saturate(float x) {
+    return clamp(x, 0.0, 1.0);
+}
+vec3 saturate(vec3 x) {
+    return clamp(x, vec3(0.0), vec3(1.0));
+}
+vec4 dReflection;
+vec3 dAlbedo;
+vec3 dNormalW;
+vec3 dViewDirW;
+vec3 dDiffuseLight;
+vec3 dSpecularLight;
+vec3 dLightDirNormW;
+vec3 dSpecularity;
+float dGlossiness;
+float dAlpha;
+
+vec4 texture2DSRGB(sampler2D tex, vec2 uv) {
+    return texture2D(tex, uv);
+}
+vec4 textureCubeSRGB(samplerCube tex, vec3 uvw) {
+    return textureCube(tex, uvw);
+}
+vec3 gammaCorrectOutput(vec3 color) {
+    return color;
+}
+vec3 gammaCorrectInput(vec3 color) {
+    return color;
+}
+float gammaCorrectInput(float color) {
+    return color;
+}
+vec4 gammaCorrectInput(vec4 color) {
+    return color;
+}
+vec3 toneMap(vec3 color) {
+    return color;
+}
+vec3 addFog(vec3 color) {
+    return color;
+}
+uniform sampler2D texture_diffuseMap;
+void getAlbedo() {
+    dAlbedo = texture2DSRGB(texture_diffuseMap, vUv0).rgb;
+}
+uniform sampler2D texture_opacityMap;
+void getOpacity() {
+    dAlpha = texture2D(texture_opacityMap, vUv0).a;
+}
+uniform sampler2D texture_emissiveMap;
+vec3 getEmission() {
+    return texture2DSRGB(texture_emissiveMap, vUv0).rgb;
+}
+float antiAliasGlossiness(float power) {
+    return power;
+}
+uniform vec3 material_specular;
+void getSpecularity() {
+    dSpecularity = material_specular;
+}
+uniform float material_shininess;
+void getGlossiness() {
+    dGlossiness = material_shininess + 0.0000001;
+}
+// Schlick's approximation
+uniform float material_fresnelFactor; // unused
+void getFresnel() {
+    float fresnel = 1.0 - max(dot(dNormalW, dViewDirW), 0.0);
+    float fresnel2 = fresnel * fresnel;
+    fresnel *= fresnel2 * fresnel2;
+    fresnel *= dGlossiness * dGlossiness;
+    dSpecularity = dSpecularity + (1.0 - dSpecularity) * fresnel;
+}
+// Energy-conserving (hopefully) Blinn-Phong
+float getLightSpecular() {
+    vec3 h = normalize( -dLightDirNormW + dViewDirW );
+    float nh = max( dot( h, dNormalW ), 0.0 );
+    float specPow = exp2(dGlossiness * 11.0); // glossiness is linear, power is not; 0 - 2048
+    specPow = antiAliasGlossiness(specPow);
+    // Hack: On Mac OS X, calling pow with zero for the exponent generates hideous artifacts so bias up a little
+    specPow = max(specPow, 0.0001);
+    return pow(nh, specPow) * (specPow + 2.0) / 8.0;
+}
+vec3 combineColor() {
+    return mix(dAlbedo * dDiffuseLight, dSpecularLight + dReflection.rgb * dReflection.a, dSpecularity);
+}
+
+void addAmbient() {
+    dDiffuseLight += light_globalAmbient;
+}
+
+void main(void) {
+    dDiffuseLight = vec3(0);
+    dSpecularLight = vec3(0);
+    dReflection = vec4(0);
+    dSpecularity = vec3(0);
+   getOpacity();
+   getAlbedo();
+   addAmbient();
+
+   gl_FragColor.rgb = combineColor();
+   gl_FragColor.rgb += getEmission();
+   gl_FragColor.rgb = addFog(gl_FragColor.rgb);
+   gl_FragColor.rgb = toneMap(gl_FragColor.rgb);
+   gl_FragColor.rgb = gammaCorrectOutput(gl_FragColor.rgb);
+gl_FragColor.a = dAlpha;
+
+}
+^AT^vertex_position,POSITION,vertex_texCoord0,TEXCOORD0,^SH^-1948690363^VS^varying vec3 vPositionW;
+varying vec2 vUv0;
+
+
+
+attribute vec3 vertex_position;
+attribute vec3 vertex_normal;
+attribute vec4 vertex_tangent;
+attribute vec2 vertex_texCoord0;
+attribute vec2 vertex_texCoord1;
+attribute vec4 vertex_color;
+uniform mat4 matrix_viewProjection;
+uniform mat4 matrix_model;
+uniform mat3 matrix_normal;
+vec3 dPositionW;
+mat4 dModelMatrix;
+mat3 dNormalMatrix;
+vec3 dLightPosW;
+vec3 dLightDirNormW;
+vec3 dNormalW;
+
+vec2 getUv0() {
+    return vertex_texCoord0;
+}
+mat4 getModelMatrix() {
+    return matrix_model;
+}
+vec4 getPosition() {
+    vec4 posW = vec4((getModelMatrix() * vec4(vertex_position, 1.0)).xy, 0.0, 1.0);
+    dPositionW = posW.xyz;
+    return posW;
+}
+vec3 getWorldPosition() {
+    return dPositionW;
+}
+
+
+void main(void) {
+    gl_Position = getPosition();
+   vPositionW    = getWorldPosition();
+   vec2 uv0 = getUv0();
+   vUv0 = uv0;
+}^PS^#extension GL_OES_standard_derivatives : enable
+
+precision highp float;
+
+varying vec3 vPositionW;
+varying vec2 vUv0;
+
+uniform vec3 view_position;
+uniform vec3 light_globalAmbient;
+float square(float x) {
+    return x*x;
+}
+float saturate(float x) {
+    return clamp(x, 0.0, 1.0);
+}
+vec3 saturate(vec3 x) {
+    return clamp(x, vec3(0.0), vec3(1.0));
+}
+vec4 dReflection;
+vec3 dAlbedo;
+vec3 dDiffuseLight;
+vec3 dSpecularLight;
+vec3 dSpecularity;
+float dAlpha;
+
+vec4 texture2DSRGB(sampler2D tex, vec2 uv) {
+    return texture2D(tex, uv);
+}
+vec4 textureCubeSRGB(samplerCube tex, vec3 uvw) {
+    return textureCube(tex, uvw);
+}
+vec3 gammaCorrectOutput(vec3 color) {
+    return color;
+}
+vec3 gammaCorrectInput(vec3 color) {
+    return color;
+}
+float gammaCorrectInput(float color) {
+    return color;
+}
+vec4 gammaCorrectInput(vec4 color) {
+    return color;
+}
+vec3 toneMap(vec3 color) {
+    return color;
+}
+vec3 addFog(vec3 color) {
+    return color;
+}
+uniform vec3 material_diffuse;
+void getAlbedo() {
+    dAlbedo = material_diffuse.rgb;
+}
+uniform sampler2D texture_opacityMap;
+uniform float material_opacity;
+void getOpacity() {
+    dAlpha = texture2D(texture_opacityMap, vUv0).a * material_opacity;
+}
+uniform sampler2D texture_emissiveMap;
+vec3 getEmission() {
+    return texture2DSRGB(texture_emissiveMap, vUv0).rgb;
+}
+vec3 combineColor() {
+    return dAlbedo * dDiffuseLight;
+}
+
+void addAmbient() {
+    dDiffuseLight += light_globalAmbient;
+}
+
+void main(void) {
+    dDiffuseLight = vec3(0);
+    dSpecularLight = vec3(0);
+    dReflection = vec4(0);
+    dSpecularity = vec3(0);
+   getOpacity();
+   getAlbedo();
+   addAmbient();
+
+   gl_FragColor.rgb = combineColor();
+   gl_FragColor.rgb += getEmission();
+   gl_FragColor.rgb = addFog(gl_FragColor.rgb);
+   gl_FragColor.rgb = toneMap(gl_FragColor.rgb);
+   gl_FragColor.rgb = gammaCorrectOutput(gl_FragColor.rgb);
+gl_FragColor.rgb *= dAlpha;
+gl_FragColor.a = dAlpha;
+
+}
+^AT^vertex_position,POSITION,vertex_texCoord0,TEXCOORD0,^SH^-1085365113^VS^varying vec3 vPositionW;
+varying vec2 vUv0;
+
+
+
+attribute vec3 vertex_position;
+attribute vec3 vertex_normal;
+attribute vec4 vertex_tangent;
+attribute vec2 vertex_texCoord0;
+attribute vec2 vertex_texCoord1;
+attribute vec4 vertex_color;
+uniform mat4 matrix_viewProjection;
+uniform mat4 matrix_model;
+uniform mat3 matrix_normal;
+vec3 dPositionW;
+mat4 dModelMatrix;
+mat3 dNormalMatrix;
+vec3 dLightPosW;
+vec3 dLightDirNormW;
+vec3 dNormalW;
+
+vec2 getUv0() {
+    return vertex_texCoord0;
+}
+mat4 getModelMatrix() {
+    return matrix_model;
+}
+vec4 getPosition() {
+    dModelMatrix = getModelMatrix();
+    vec4 posW = dModelMatrix * vec4(vertex_position, 1.0);
+    dPositionW = posW.xyz;
+    return matrix_viewProjection * posW;
+}
+vec3 getWorldPosition() {
+    return dPositionW;
+}
+
+
+void main(void) {
+    gl_Position = getPosition();
+   vPositionW    = getWorldPosition();
+   vec2 uv0 = getUv0();
+   vUv0 = uv0;
+}^PS^#extension GL_OES_standard_derivatives : enable
+
+precision highp float;
+
+varying vec3 vPositionW;
+varying vec2 vUv0;
+
+uniform vec3 view_position;
+uniform vec3 light_globalAmbient;
+float square(float x) {
+    return x*x;
+}
+float saturate(float x) {
+    return clamp(x, 0.0, 1.0);
+}
+vec3 saturate(vec3 x) {
+    return clamp(x, vec3(0.0), vec3(1.0));
+}
+vec4 dReflection;
+vec3 dAlbedo;
+vec3 dNormalW;
+vec3 dViewDirW;
+vec3 dDiffuseLight;
+vec3 dSpecularLight;
+vec3 dLightDirNormW;
+vec3 dSpecularity;
+float dGlossiness;
+float dAlpha;
+
+vec3 gammaCorrectInput(vec3 color) {
+    return pow(color, vec3(2.2));
+}
+float gammaCorrectInput(float color) {
+    return pow(color, 2.2);
+}
+vec4 gammaCorrectInput(vec4 color) {
+    return vec4(pow(color.rgb, vec3(2.2)), color.a);
+}
+vec4 texture2DSRGB(sampler2D tex, vec2 uv) {
+    vec4 rgba = texture2D(tex, uv);
+    rgba.rgb = gammaCorrectInput(rgba.rgb);
+    return rgba;
+}
+vec4 textureCubeSRGB(samplerCube tex, vec3 uvw) {
+    vec4 rgba = textureCube(tex, uvw);
+    rgba.rgb = gammaCorrectInput(rgba.rgb);
+    return rgba;
+}
+vec3 gammaCorrectOutput(vec3 color) {
+    color += vec3(0.0000001);
+    return pow(color, vec3(0.45));
+}
+uniform float exposure;
+vec3 toneMap(vec3 color) {
+    return color * exposure;
+}
+vec3 addFog(vec3 color) {
+    return color;
+}
+uniform sampler2D texture_diffuseMap;
+void getAlbedo() {
+    dAlbedo = texture2DSRGB(texture_diffuseMap, vUv0).rgb;
+}
+uniform sampler2D texture_opacityMap;
+void getOpacity() {
+    dAlpha = texture2D(texture_opacityMap, vUv0).a;
+}
+uniform sampler2D texture_emissiveMap;
+vec3 getEmission() {
+    return texture2DSRGB(texture_emissiveMap, vUv0).rgb;
+}
+float antiAliasGlossiness(float power) {
+    return power;
+}
+uniform vec3 material_specular;
+void getSpecularity() {
+    dSpecularity = material_specular;
+}
+uniform float material_shininess;
+void getGlossiness() {
+    dGlossiness = material_shininess + 0.0000001;
+}
+// Schlick's approximation
+uniform float material_fresnelFactor; // unused
+void getFresnel() {
+    float fresnel = 1.0 - max(dot(dNormalW, dViewDirW), 0.0);
+    float fresnel2 = fresnel * fresnel;
+    fresnel *= fresnel2 * fresnel2;
+    fresnel *= dGlossiness * dGlossiness;
+    dSpecularity = dSpecularity + (1.0 - dSpecularity) * fresnel;
+}
+// Energy-conserving (hopefully) Blinn-Phong
+float getLightSpecular() {
+    vec3 h = normalize( -dLightDirNormW + dViewDirW );
+    float nh = max( dot( h, dNormalW ), 0.0 );
+    float specPow = exp2(dGlossiness * 11.0); // glossiness is linear, power is not; 0 - 2048
+    specPow = antiAliasGlossiness(specPow);
+    // Hack: On Mac OS X, calling pow with zero for the exponent generates hideous artifacts so bias up a little
+    specPow = max(specPow, 0.0001);
+    return pow(nh, specPow) * (specPow + 2.0) / 8.0;
+}
+vec3 combineColor() {
+    return mix(dAlbedo * dDiffuseLight, dSpecularLight + dReflection.rgb * dReflection.a, dSpecularity);
+}
+
+void addAmbient() {
+    dDiffuseLight += light_globalAmbient;
+}
+uniform float alpha_ref;
+void alphaTest(float a) {
+    if (a < alpha_ref) discard;
+}
+
+void main(void) {
+    dDiffuseLight = vec3(0);
+    dSpecularLight = vec3(0);
+    dReflection = vec4(0);
+    dSpecularity = vec3(0);
+   getOpacity();
+   alphaTest(dAlpha);
+   getAlbedo();
+   addAmbient();
+
+   gl_FragColor.rgb = combineColor();
+   gl_FragColor.rgb += getEmission();
+   gl_FragColor.rgb = addFog(gl_FragColor.rgb);
+   gl_FragColor.rgb = toneMap(gl_FragColor.rgb);
+   gl_FragColor.rgb = gammaCorrectOutput(gl_FragColor.rgb);
+gl_FragColor.a = dAlpha;
+
+}
+^AT^vertex_position,POSITION,vertex_texCoord0,TEXCOORD0,^SH^pick^VS^attribute vec3 vertex_position;
+uniform mat4 matrix_model;
+uniform mat4 matrix_viewProjection;
+vec3 dPositionW;
+mat4 dModelMatrix;
+mat4 getModelMatrix() {
+    return matrix_model;
+}
+vec4 getPosition() {
+    dModelMatrix = getModelMatrix();
+    vec4 posW = dModelMatrix * vec4(vertex_position, 1.0);
+    dPositionW = posW.xyz;
+    return matrix_viewProjection * posW;
+}
+vec3 getWorldPosition() {
+    return dPositionW;
+}
+void main(void)
+{
+   gl_Position = getPosition();
+}
+^PS^precision highp float;
+
+uniform vec4 uColor;void main(void)
+{
+    gl_FragColor = uColor;
+}
+^AT^vertex_position,POSITION,^SH^pick_opama^VS^attribute vec3 vertex_position;
+uniform mat4 matrix_model;
+uniform mat4 matrix_viewProjection;
+vec3 dPositionW;
+mat4 dModelMatrix;
+mat4 getModelMatrix() {
+    return matrix_model;
+}
+vec4 getPosition() {
+    dModelMatrix = getModelMatrix();
+    vec4 posW = dModelMatrix * vec4(vertex_position, 1.0);
+    dPositionW = posW.xyz;
+    return matrix_viewProjection * posW;
+}
+vec3 getWorldPosition() {
+    return dPositionW;
+}
+attribute vec2 vertex_texCoord0;
+
+varying vec2 vUv0;
+
+void main(void)
+{
+   gl_Position = getPosition();
+    vUv0 = vertex_texCoord0;
+}
+^PS^precision highp float;
+
+uniform vec4 uColor;varying vec2 vUv0;
+
+uniform sampler2D texture_opacityMap;
+
+uniform float alpha_ref;
+void alphaTest(float a) {
+    if (a < alpha_ref) discard;
+}
+void main(void)
+{
+    alphaTest( texture2D(texture_opacityMap, vUv0).a );
+
+    gl_FragColor = uColor;
+}
+^AT^vertex_position,POSITION,vertex_texCoord0,TEXCOORD0,^SH^pick_opama_screenspace^VS^attribute vec3 vertex_position;
+uniform mat4 matrix_model;
+uniform mat4 matrix_viewProjection;
+vec3 dPositionW;
+mat4 dModelMatrix;
+mat4 getModelMatrix() {
+    return matrix_model;
+}
+vec4 getPosition() {
+    vec4 posW = vec4((getModelMatrix() * vec4(vertex_position, 1.0)).xy, 0.0, 1.0);
+    dPositionW = posW.xyz;
+    return posW;
+}
+vec3 getWorldPosition() {
+    return dPositionW;
+}
+attribute vec2 vertex_texCoord0;
+
+varying vec2 vUv0;
+
+void main(void)
+{
+   gl_Position = getPosition();
+    vUv0 = vertex_texCoord0;
+}
+^PS^precision highp float;
+
+uniform vec4 uColor;varying vec2 vUv0;
+
+uniform sampler2D texture_opacityMap;
+
+uniform float alpha_ref;
+void alphaTest(float a) {
+    if (a < alpha_ref) discard;
+}
+void main(void)
+{
+    alphaTest( texture2D(texture_opacityMap, vUv0).a );
+
+    gl_FragColor = uColor;
+}
+^AT^vertex_position,POSITION,vertex_texCoord0,TEXCOORD0,^SH^fsQuad00true^VS^attribute vec2 vertex_position;
+varying vec2 vUv0;
+void main(void)
+{
+    gl_Position = vec4(vertex_position, 0.5, 1.0);
+    vUv0 = vertex_position.xy*0.5+0.5;
+}
+^PS^precision highp float;
+
+
+varying vec2 vUv0;
+uniform sampler2D particleTexIN;
+uniform sampler2D internalTex0;
+uniform sampler2D internalTex1;
+uniform sampler2D internalTex2;
+uniform mat3 emitterMatrix;
+uniform vec3 emitterScale;
+uniform vec3 emitterPos, frameRandom, localVelocityDivMult, velocityDivMult;
+uniform float delta, rate, rateDiv, lifetime, numParticles, rotSpeedDivMult, seed;
+uniform float startAngle, startAngle2;
+uniform float initialVelocity;
+uniform float graphSampleSize;
+uniform float graphNumSamples;
+vec3 inPos;
+vec3 inVel;
+float inAngle;
+bool inShow;
+float inLife;
+float visMode;
+vec3 outPos;
+vec3 outVel;
+float outAngle;
+bool outShow;
+float outLife;
+//RG=X, BA=Y
+//RG=Z, BA=A
+//RGB=V, A=visMode
+//RGBA=life
+#define PI2 6.283185307179586
+uniform vec3 inBoundsSize;
+uniform vec3 inBoundsCenter;
+uniform float maxVel;
+float decodeFloatRG(vec2 rg) {
+    return rg.y*(1.0/255.0) + rg.x;
+}
+float decodeFloatRGBA( vec4 rgba ) {
+  return dot( rgba, vec4(1.0, 1.0/255.0, 1.0/65025.0, 1.0/160581375.0) );
+}
+void readInput(float uv) {
+    vec4 tex0 = texture2D(particleTexIN, vec2(uv, 0.125));
+    vec4 tex1 = texture2D(particleTexIN, vec2(uv, 0.375));
+    vec4 tex2 = texture2D(particleTexIN, vec2(uv, 0.625));
+    vec4 tex3 = texture2D(particleTexIN, vec2(uv, 0.875));
+    inPos = vec3(decodeFloatRG(tex0.rg), decodeFloatRG(tex0.ba), decodeFloatRG(tex1.rg));
+    inPos = (inPos - vec3(0.5)) * inBoundsSize + inBoundsCenter;
+    inVel = tex2.xyz;
+    inVel = (inVel - vec3(0.5)) * maxVel;
+    inAngle = decodeFloatRG(tex1.ba) * PI2;
+    inShow = tex2.a > 0.5;
+    inLife = decodeFloatRGBA(tex3);
+    float maxNegLife = max(lifetime, (numParticles - 1.0) * (rate+rateDiv));
+    float maxPosLife = lifetime+1.0;
+    inLife = inLife * (maxNegLife + maxPosLife) - maxNegLife;
+}
+uniform vec3 outBoundsMul;
+uniform vec3 outBoundsAdd;
+vec2 encodeFloatRG( float v ) {
+  vec2 enc = vec2(1.0, 255.0) * v;
+  enc = fract(enc);
+  enc -= enc.yy * vec2(1.0/255.0, 1.0/255.0);
+  return enc;
+}
+vec4 encodeFloatRGBA( float v ) {
+  vec4 enc = vec4(1.0, 255.0, 65025.0, 160581375.0) * v;
+  enc = fract(enc);
+  enc -= enc.yzww * vec4(1.0/255.0,1.0/255.0,1.0/255.0,0.0);
+  return enc;
+}
+void writeOutput() {
+    //outPos = (outPos - outBoundsCenter) / outBoundsSize + vec3(0.5);
+    outPos = outPos * outBoundsMul + outBoundsAdd;
+    outAngle = fract(outAngle / PI2);
+    outVel = (outVel / maxVel) + vec3(0.5); // TODO: mul
+    float maxNegLife = max(lifetime, (numParticles - 1.0) * (rate+rateDiv));
+    float maxPosLife = lifetime+1.0;
+    outLife = (outLife + maxNegLife) / (maxNegLife + maxPosLife);
+    if (gl_FragCoord.y < 1.0) {
+        gl_FragColor = vec4(encodeFloatRG(outPos.x), encodeFloatRG(outPos.y));
+    } else if (gl_FragCoord.y < 2.0) {
+        gl_FragColor = vec4(encodeFloatRG(outPos.z), encodeFloatRG(outAngle));
+    } else if (gl_FragCoord.y < 3.0) {
+        gl_FragColor = vec4(outVel, visMode*0.5+0.5);
+    } else {
+        gl_FragColor = encodeFloatRGBA(outLife);
+    }
+}
+uniform mat3 spawnBounds;
+vec3 calcSpawnPosition(vec3 inBounds, float rndFactor) {
+    return emitterPos + spawnBounds * (inBounds - vec3(0.5));
+}
+void addInitialVelocity(inout vec3 localVelocity, vec3 inBounds) {
+    localVelocity -= vec3(0, 0, initialVelocity);
+}
+float saturate(float x) {
+    return clamp(x, 0.0, 1.0);
+}
+vec3 unpack3NFloats(float src) {
+    float r = fract(src);
+    float g = fract(src * 256.0);
+    float b = fract(src * 65536.0);
+    return vec3(r, g, b);
+}
+vec3 tex1Dlod_lerp(sampler2D tex, vec2 tc, out vec3 w) {
+    vec4 a = texture2D(tex, tc);
+    vec4 b = texture2D(tex, tc + graphSampleSize);
+    float c = fract(tc.x * graphNumSamples);
+    vec3 unpackedA = unpack3NFloats(a.w);
+    vec3 unpackedB = unpack3NFloats(b.w);
+    w = mix(unpackedA, unpackedB, c);
+    return mix(a.xyz, b.xyz, c);
+}
+#define HASHSCALE4 vec4(1031, .1030, .0973, .1099)
+vec4 hash41(float p) {
+    vec4 p4 = fract(vec4(p) * HASHSCALE4);
+    p4 += dot(p4, p4.wzxy+19.19);
+    return fract(vec4((p4.x + p4.y)*p4.z, (p4.x + p4.z)*p4.y, (p4.y + p4.z)*p4.w, (p4.z + p4.w)*p4.x));
+}
+void main(void)
+{
+    if (gl_FragCoord.x > numParticles) discard;
+    readInput(vUv0.x);
+    visMode = inShow? 1.0 : -1.0;
+    vec4 rndFactor = hash41(gl_FragCoord.x + seed);
+    float particleRate = rate + rateDiv * rndFactor.x;
+    outLife = inLife + delta;
+    float nlife = clamp(outLife / lifetime, 0.0, 1.0);
+    vec3 localVelocityDiv;
+    vec3 velocityDiv;
+    vec3 paramDiv;
+    vec3 localVelocity = tex1Dlod_lerp(internalTex0, vec2(nlife, 0), localVelocityDiv);
+    vec3 velocity =      tex1Dlod_lerp(internalTex1, vec2(nlife, 0), velocityDiv);
+    vec3 params =        tex1Dlod_lerp(internalTex2, vec2(nlife, 0), paramDiv);
+    float rotSpeed = params.x;
+    float rotSpeedDiv = paramDiv.y;
+    localVelocity +=    (localVelocityDiv * vec3(2.0) - vec3(1.0)) * localVelocityDivMult * rndFactor.xyz;
+    velocity +=         (velocityDiv * vec3(2.0) - vec3(1.0)) * velocityDivMult * rndFactor.xyz;
+    rotSpeed +=         (rotSpeedDiv * 2.0 - 1.0) * rotSpeedDivMult * rndFactor.y;
+    addInitialVelocity(localVelocity, rndFactor.xyz);
+    outVel = emitterMatrix * localVelocity.xyz + velocity.xyz * emitterScale;
+    outPos = inPos + outVel * delta;
+    outAngle = inAngle + rotSpeed * delta;
+    bool respawn = outLife <= 0.0 || outLife >= lifetime;
+    outPos = respawn? calcSpawnPosition(rndFactor.xyz, rndFactor.x) : outPos;
+    outAngle = respawn? mix(startAngle, startAngle2, rndFactor.x) : outAngle;
+    outVel = respawn? vec3(0.0) : outVel;
+    if (outLife >= lifetime) {
+        outLife -= max(lifetime, (numParticles - 1.0) * particleRate);
+        visMode = 1.0;
+    }
+    visMode = outLife < 0.0? 1.0: visMode;
+
+    writeOutput();
+}
+^AT^vertex_position,POSITION,^SH^fsQuad10true^VS^attribute vec2 vertex_position;
+varying vec2 vUv0;
+void main(void)
+{
+    gl_Position = vec4(vertex_position, 0.5, 1.0);
+    vUv0 = vertex_position.xy*0.5+0.5;
+}
+^PS^precision highp float;
+
+
+varying vec2 vUv0;
+uniform sampler2D particleTexIN;
+uniform sampler2D internalTex0;
+uniform sampler2D internalTex1;
+uniform sampler2D internalTex2;
+uniform mat3 emitterMatrix;
+uniform vec3 emitterScale;
+uniform vec3 emitterPos, frameRandom, localVelocityDivMult, velocityDivMult;
+uniform float delta, rate, rateDiv, lifetime, numParticles, rotSpeedDivMult, seed;
+uniform float startAngle, startAngle2;
+uniform float initialVelocity;
+uniform float graphSampleSize;
+uniform float graphNumSamples;
+vec3 inPos;
+vec3 inVel;
+float inAngle;
+bool inShow;
+float inLife;
+float visMode;
+vec3 outPos;
+vec3 outVel;
+float outAngle;
+bool outShow;
+float outLife;
+//RG=X, BA=Y
+//RG=Z, BA=A
+//RGB=V, A=visMode
+//RGBA=life
+#define PI2 6.283185307179586
+uniform vec3 inBoundsSize;
+uniform vec3 inBoundsCenter;
+uniform float maxVel;
+float decodeFloatRG(vec2 rg) {
+    return rg.y*(1.0/255.0) + rg.x;
+}
+float decodeFloatRGBA( vec4 rgba ) {
+  return dot( rgba, vec4(1.0, 1.0/255.0, 1.0/65025.0, 1.0/160581375.0) );
+}
+void readInput(float uv) {
+    vec4 tex0 = texture2D(particleTexIN, vec2(uv, 0.125));
+    vec4 tex1 = texture2D(particleTexIN, vec2(uv, 0.375));
+    vec4 tex2 = texture2D(particleTexIN, vec2(uv, 0.625));
+    vec4 tex3 = texture2D(particleTexIN, vec2(uv, 0.875));
+    inPos = vec3(decodeFloatRG(tex0.rg), decodeFloatRG(tex0.ba), decodeFloatRG(tex1.rg));
+    inPos = (inPos - vec3(0.5)) * inBoundsSize + inBoundsCenter;
+    inVel = tex2.xyz;
+    inVel = (inVel - vec3(0.5)) * maxVel;
+    inAngle = decodeFloatRG(tex1.ba) * PI2;
+    inShow = tex2.a > 0.5;
+    inLife = decodeFloatRGBA(tex3);
+    float maxNegLife = max(lifetime, (numParticles - 1.0) * (rate+rateDiv));
+    float maxPosLife = lifetime+1.0;
+    inLife = inLife * (maxNegLife + maxPosLife) - maxNegLife;
+}
+uniform vec3 outBoundsMul;
+uniform vec3 outBoundsAdd;
+vec2 encodeFloatRG( float v ) {
+  vec2 enc = vec2(1.0, 255.0) * v;
+  enc = fract(enc);
+  enc -= enc.yy * vec2(1.0/255.0, 1.0/255.0);
+  return enc;
+}
+vec4 encodeFloatRGBA( float v ) {
+  vec4 enc = vec4(1.0, 255.0, 65025.0, 160581375.0) * v;
+  enc = fract(enc);
+  enc -= enc.yzww * vec4(1.0/255.0,1.0/255.0,1.0/255.0,0.0);
+  return enc;
+}
+void writeOutput() {
+    //outPos = (outPos - outBoundsCenter) / outBoundsSize + vec3(0.5);
+    outPos = outPos * outBoundsMul + outBoundsAdd;
+    outAngle = fract(outAngle / PI2);
+    outVel = (outVel / maxVel) + vec3(0.5); // TODO: mul
+    float maxNegLife = max(lifetime, (numParticles - 1.0) * (rate+rateDiv));
+    float maxPosLife = lifetime+1.0;
+    outLife = (outLife + maxNegLife) / (maxNegLife + maxPosLife);
+    if (gl_FragCoord.y < 1.0) {
+        gl_FragColor = vec4(encodeFloatRG(outPos.x), encodeFloatRG(outPos.y));
+    } else if (gl_FragCoord.y < 2.0) {
+        gl_FragColor = vec4(encodeFloatRG(outPos.z), encodeFloatRG(outAngle));
+    } else if (gl_FragCoord.y < 3.0) {
+        gl_FragColor = vec4(outVel, visMode*0.5+0.5);
+    } else {
+        gl_FragColor = encodeFloatRGBA(outLife);
+    }
+}
+uniform mat3 spawnBounds;
+vec3 calcSpawnPosition(vec3 inBounds, float rndFactor) {
+    return emitterPos + spawnBounds * (inBounds - vec3(0.5));
+}
+void addInitialVelocity(inout vec3 localVelocity, vec3 inBounds) {
+    localVelocity -= vec3(0, 0, initialVelocity);
+}
+float saturate(float x) {
+    return clamp(x, 0.0, 1.0);
+}
+vec3 unpack3NFloats(float src) {
+    float r = fract(src);
+    float g = fract(src * 256.0);
+    float b = fract(src * 65536.0);
+    return vec3(r, g, b);
+}
+vec3 tex1Dlod_lerp(sampler2D tex, vec2 tc, out vec3 w) {
+    vec4 a = texture2D(tex, tc);
+    vec4 b = texture2D(tex, tc + graphSampleSize);
+    float c = fract(tc.x * graphNumSamples);
+    vec3 unpackedA = unpack3NFloats(a.w);
+    vec3 unpackedB = unpack3NFloats(b.w);
+    w = mix(unpackedA, unpackedB, c);
+    return mix(a.xyz, b.xyz, c);
+}
+#define HASHSCALE4 vec4(1031, .1030, .0973, .1099)
+vec4 hash41(float p) {
+    vec4 p4 = fract(vec4(p) * HASHSCALE4);
+    p4 += dot(p4, p4.wzxy+19.19);
+    return fract(vec4((p4.x + p4.y)*p4.z, (p4.x + p4.z)*p4.y, (p4.y + p4.z)*p4.w, (p4.z + p4.w)*p4.x));
+}
+void main(void)
+{
+    if (gl_FragCoord.x > numParticles) discard;
+    readInput(vUv0.x);
+    visMode = inShow? 1.0 : -1.0;
+    vec4 rndFactor = hash41(gl_FragCoord.x + seed);
+    float particleRate = rate + rateDiv * rndFactor.x;
+    outLife = inLife + delta;
+    float nlife = clamp(outLife / lifetime, 0.0, 1.0);
+    vec3 localVelocityDiv;
+    vec3 velocityDiv;
+    vec3 paramDiv;
+    vec3 localVelocity = tex1Dlod_lerp(internalTex0, vec2(nlife, 0), localVelocityDiv);
+    vec3 velocity =      tex1Dlod_lerp(internalTex1, vec2(nlife, 0), velocityDiv);
+    vec3 params =        tex1Dlod_lerp(internalTex2, vec2(nlife, 0), paramDiv);
+    float rotSpeed = params.x;
+    float rotSpeedDiv = paramDiv.y;
+    localVelocity +=    (localVelocityDiv * vec3(2.0) - vec3(1.0)) * localVelocityDivMult * rndFactor.xyz;
+    velocity +=         (velocityDiv * vec3(2.0) - vec3(1.0)) * velocityDivMult * rndFactor.xyz;
+    rotSpeed +=         (rotSpeedDiv * 2.0 - 1.0) * rotSpeedDivMult * rndFactor.y;
+    addInitialVelocity(localVelocity, rndFactor.xyz);
+    outVel = emitterMatrix * localVelocity.xyz + velocity.xyz * emitterScale;
+    outPos = inPos + outVel * delta;
+    outAngle = inAngle + rotSpeed * delta;
+    bool respawn = outLife <= 0.0 || outLife >= lifetime;
+    outPos = respawn? calcSpawnPosition(rndFactor.xyz, rndFactor.x) : outPos;
+    outAngle = respawn? mix(startAngle, startAngle2, rndFactor.x) : outAngle;
+    outVel = respawn? vec3(0.0) : outVel;
+    if (outLife >= lifetime) {
+        outLife -= max(lifetime, (numParticles - 1.0) * particleRate);
+        visMode = -1.0;
+    }
+
+    writeOutput();
+}
+^AT^vertex_position,POSITION,^SH^fsQuad20true^VS^attribute vec2 vertex_position;
+varying vec2 vUv0;
+void main(void)
+{
+    gl_Position = vec4(vertex_position, 0.5, 1.0);
+    vUv0 = vertex_position.xy*0.5+0.5;
+}
+^PS^precision highp float;
+
+
+varying vec2 vUv0;
+uniform sampler2D particleTexIN;
+uniform sampler2D internalTex0;
+uniform sampler2D internalTex1;
+uniform sampler2D internalTex2;
+uniform mat3 emitterMatrix;
+uniform vec3 emitterScale;
+uniform vec3 emitterPos, frameRandom, localVelocityDivMult, velocityDivMult;
+uniform float delta, rate, rateDiv, lifetime, numParticles, rotSpeedDivMult, seed;
+uniform float startAngle, startAngle2;
+uniform float initialVelocity;
+uniform float graphSampleSize;
+uniform float graphNumSamples;
+vec3 inPos;
+vec3 inVel;
+float inAngle;
+bool inShow;
+float inLife;
+float visMode;
+vec3 outPos;
+vec3 outVel;
+float outAngle;
+bool outShow;
+float outLife;
+//RG=X, BA=Y
+//RG=Z, BA=A
+//RGB=V, A=visMode
+//RGBA=life
+#define PI2 6.283185307179586
+uniform vec3 inBoundsSize;
+uniform vec3 inBoundsCenter;
+uniform float maxVel;
+float decodeFloatRG(vec2 rg) {
+    return rg.y*(1.0/255.0) + rg.x;
+}
+float decodeFloatRGBA( vec4 rgba ) {
+  return dot( rgba, vec4(1.0, 1.0/255.0, 1.0/65025.0, 1.0/160581375.0) );
+}
+void readInput(float uv) {
+    vec4 tex0 = texture2D(particleTexIN, vec2(uv, 0.125));
+    vec4 tex1 = texture2D(particleTexIN, vec2(uv, 0.375));
+    vec4 tex2 = texture2D(particleTexIN, vec2(uv, 0.625));
+    vec4 tex3 = texture2D(particleTexIN, vec2(uv, 0.875));
+    inPos = vec3(decodeFloatRG(tex0.rg), decodeFloatRG(tex0.ba), decodeFloatRG(tex1.rg));
+    inPos = (inPos - vec3(0.5)) * inBoundsSize + inBoundsCenter;
+    inVel = tex2.xyz;
+    inVel = (inVel - vec3(0.5)) * maxVel;
+    inAngle = decodeFloatRG(tex1.ba) * PI2;
+    inShow = tex2.a > 0.5;
+    inLife = decodeFloatRGBA(tex3);
+    float maxNegLife = max(lifetime, (numParticles - 1.0) * (rate+rateDiv));
+    float maxPosLife = lifetime+1.0;
+    inLife = inLife * (maxNegLife + maxPosLife) - maxNegLife;
+}
+uniform vec3 outBoundsMul;
+uniform vec3 outBoundsAdd;
+vec2 encodeFloatRG( float v ) {
+  vec2 enc = vec2(1.0, 255.0) * v;
+  enc = fract(enc);
+  enc -= enc.yy * vec2(1.0/255.0, 1.0/255.0);
+  return enc;
+}
+vec4 encodeFloatRGBA( float v ) {
+  vec4 enc = vec4(1.0, 255.0, 65025.0, 160581375.0) * v;
+  enc = fract(enc);
+  enc -= enc.yzww * vec4(1.0/255.0,1.0/255.0,1.0/255.0,0.0);
+  return enc;
+}
+void writeOutput() {
+    //outPos = (outPos - outBoundsCenter) / outBoundsSize + vec3(0.5);
+    outPos = outPos * outBoundsMul + outBoundsAdd;
+    outAngle = fract(outAngle / PI2);
+    outVel = (outVel / maxVel) + vec3(0.5); // TODO: mul
+    float maxNegLife = max(lifetime, (numParticles - 1.0) * (rate+rateDiv));
+    float maxPosLife = lifetime+1.0;
+    outLife = (outLife + maxNegLife) / (maxNegLife + maxPosLife);
+    if (gl_FragCoord.y < 1.0) {
+        gl_FragColor = vec4(encodeFloatRG(outPos.x), encodeFloatRG(outPos.y));
+    } else if (gl_FragCoord.y < 2.0) {
+        gl_FragColor = vec4(encodeFloatRG(outPos.z), encodeFloatRG(outAngle));
+    } else if (gl_FragCoord.y < 3.0) {
+        gl_FragColor = vec4(outVel, visMode*0.5+0.5);
+    } else {
+        gl_FragColor = encodeFloatRGBA(outLife);
+    }
+}
+uniform mat3 spawnBounds;
+vec3 calcSpawnPosition(vec3 inBounds, float rndFactor) {
+    return emitterPos + spawnBounds * (inBounds - vec3(0.5));
+}
+void addInitialVelocity(inout vec3 localVelocity, vec3 inBounds) {
+    localVelocity -= vec3(0, 0, initialVelocity);
+}
+float saturate(float x) {
+    return clamp(x, 0.0, 1.0);
+}
+vec3 unpack3NFloats(float src) {
+    float r = fract(src);
+    float g = fract(src * 256.0);
+    float b = fract(src * 65536.0);
+    return vec3(r, g, b);
+}
+vec3 tex1Dlod_lerp(sampler2D tex, vec2 tc, out vec3 w) {
+    vec4 a = texture2D(tex, tc);
+    vec4 b = texture2D(tex, tc + graphSampleSize);
+    float c = fract(tc.x * graphNumSamples);
+    vec3 unpackedA = unpack3NFloats(a.w);
+    vec3 unpackedB = unpack3NFloats(b.w);
+    w = mix(unpackedA, unpackedB, c);
+    return mix(a.xyz, b.xyz, c);
+}
+#define HASHSCALE4 vec4(1031, .1030, .0973, .1099)
+vec4 hash41(float p) {
+    vec4 p4 = fract(vec4(p) * HASHSCALE4);
+    p4 += dot(p4, p4.wzxy+19.19);
+    return fract(vec4((p4.x + p4.y)*p4.z, (p4.x + p4.z)*p4.y, (p4.y + p4.z)*p4.w, (p4.z + p4.w)*p4.x));
+}
+void main(void)
+{
+    if (gl_FragCoord.x > numParticles) discard;
+    readInput(vUv0.x);
+    visMode = inShow? 1.0 : -1.0;
+    vec4 rndFactor = hash41(gl_FragCoord.x + seed);
+    float particleRate = rate + rateDiv * rndFactor.x;
+    outLife = inLife + delta;
+    float nlife = clamp(outLife / lifetime, 0.0, 1.0);
+    vec3 localVelocityDiv;
+    vec3 velocityDiv;
+    vec3 paramDiv;
+    vec3 localVelocity = tex1Dlod_lerp(internalTex0, vec2(nlife, 0), localVelocityDiv);
+    vec3 velocity =      tex1Dlod_lerp(internalTex1, vec2(nlife, 0), velocityDiv);
+    vec3 params =        tex1Dlod_lerp(internalTex2, vec2(nlife, 0), paramDiv);
+    float rotSpeed = params.x;
+    float rotSpeedDiv = paramDiv.y;
+    localVelocity +=    (localVelocityDiv * vec3(2.0) - vec3(1.0)) * localVelocityDivMult * rndFactor.xyz;
+    velocity +=         (velocityDiv * vec3(2.0) - vec3(1.0)) * velocityDivMult * rndFactor.xyz;
+    rotSpeed +=         (rotSpeedDiv * 2.0 - 1.0) * rotSpeedDivMult * rndFactor.y;
+    addInitialVelocity(localVelocity, rndFactor.xyz);
+    outVel = emitterMatrix * localVelocity.xyz + velocity.xyz * emitterScale;
+    outPos = inPos + outVel * delta;
+    outAngle = inAngle + rotSpeed * delta;
+    bool respawn = outLife <= 0.0 || outLife >= lifetime;
+    outPos = respawn? calcSpawnPosition(rndFactor.xyz, rndFactor.x) : outPos;
+    outAngle = respawn? mix(startAngle, startAngle2, rndFactor.x) : outAngle;
+    outVel = respawn? vec3(0.0) : outVel;
+    visMode = outLife < 0.0? -1.0: visMode;
+
+    writeOutput();
+}
+^AT^vertex_position,POSITION,^SH^particlefalse0false0.1true0false10nonefalsefalse1falsetruetrue^VS^attribute vec4 particle_vertexData; // XYZ = particle position, W = particle ID + random factor
+uniform mat4 matrix_viewProjection;
+uniform mat4 matrix_model;
+uniform mat3 matrix_normal;
+uniform mat4 matrix_viewInverse;
+uniform mat4 matrix_view;
+uniform float numParticles, numParticlesPot;
+uniform float graphSampleSize;
+uniform float graphNumSamples;
+uniform float stretch;
+uniform vec3 wrapBounds;
+uniform vec3 emitterScale, emitterPos;
+uniform float rate, rateDiv, lifetime, deltaRandomnessStatic, scaleDivMult, alphaDivMult, seed, delta;
+uniform sampler2D particleTexOUT, particleTexIN;
+uniform sampler2D internalTex0;
+uniform sampler2D internalTex1;
+uniform sampler2D internalTex2;
+varying vec4 texCoordsAlphaLife;
+vec3 inPos;
+vec3 inVel;
+float inAngle;
+bool inShow;
+float inLife;
+//RG=X, BA=Y
+//RG=Z, BA=A
+//RGB=V, A=visMode
+//RGBA=life
+#define PI2 6.283185307179586
+uniform vec3 inBoundsSize;
+uniform vec3 inBoundsCenter;
+uniform float maxVel;
+float decodeFloatRG(vec2 rg) {
+    return rg.y*(1.0/255.0) + rg.x;
+}
+float decodeFloatRGBA( vec4 rgba ) {
+  return dot( rgba, vec4(1.0, 1.0/255.0, 1.0/65025.0, 1.0/160581375.0) );
+}
+void readInput(float uv) {
+    vec4 tex0 = texture2D(particleTexIN, vec2(uv, 0.125));
+    vec4 tex1 = texture2D(particleTexIN, vec2(uv, 0.375));
+    vec4 tex2 = texture2D(particleTexIN, vec2(uv, 0.625));
+    vec4 tex3 = texture2D(particleTexIN, vec2(uv, 0.875));
+    inPos = vec3(decodeFloatRG(tex0.rg), decodeFloatRG(tex0.ba), decodeFloatRG(tex1.rg));
+    inPos = (inPos - vec3(0.5)) * inBoundsSize + inBoundsCenter;
+    inVel = tex2.xyz;
+    inVel = (inVel - vec3(0.5)) * maxVel;
+    inAngle = decodeFloatRG(tex1.ba) * PI2;
+    inShow = tex2.a > 0.5;
+    inLife = decodeFloatRGBA(tex3);
+    float maxNegLife = max(lifetime, (numParticles - 1.0) * (rate+rateDiv));
+    float maxPosLife = lifetime+1.0;
+    inLife = inLife * (maxNegLife + maxPosLife) - maxNegLife;
+}
+
+vec3 unpack3NFloats(float src) {
+    float r = fract(src);
+    float g = fract(src * 256.0);
+    float b = fract(src * 65536.0);
+    return vec3(r, g, b);
+}
+float saturate(float x) {
+    return clamp(x, 0.0, 1.0);
+}
+vec4 tex1Dlod_lerp(sampler2D tex, vec2 tc) {
+    return mix( texture2D(tex,tc), texture2D(tex,tc + graphSampleSize), fract(tc.x*graphNumSamples) );
+}
+vec4 tex1Dlod_lerp(sampler2D tex, vec2 tc, out vec3 w) {
+    vec4 a = texture2D(tex,tc);
+    vec4 b = texture2D(tex,tc + graphSampleSize);
+    float c = fract(tc.x*graphNumSamples);
+    vec3 unpackedA = unpack3NFloats(a.w);
+    vec3 unpackedB = unpack3NFloats(b.w);
+    w = mix(unpackedA, unpackedB, c);
+    return mix(a, b, c);
+}
+vec2 rotate(vec2 quadXY, float pRotation, out mat2 rotMatrix) {
+    float c = cos(pRotation);
+    float s = sin(pRotation);
+    mat2 m = mat2(c, -s, s, c);
+    rotMatrix = m;
+    return m * quadXY;
+}
+vec3 billboard(vec3 InstanceCoords, vec2 quadXY, out mat3 localMat) {
+    vec3 viewUp = matrix_viewInverse[1].xyz;
+    vec3 posCam = matrix_viewInverse[3].xyz;
+    mat3 billMat;
+    billMat[2] = normalize(InstanceCoords - posCam);
+    billMat[0] = normalize(cross(viewUp, billMat[2]));
+    billMat[1] = -viewUp;
+    vec3 pos = billMat * vec3(quadXY, 0);
+    localMat = billMat;
+    return pos;
+}
+void main(void) {
+    vec3 meshLocalPos = particle_vertexData.xyz;
+    float id = floor(particle_vertexData.w);
+    float rndFactor = fract(sin(id + 1.0 + seed));
+    vec3 rndFactor3 = vec3(rndFactor, fract(rndFactor*10.0), fract(rndFactor*100.0));
+    float uv = id / numParticlesPot;
+    readInput(uv);
+    vec2 velocityV = normalize((mat3(matrix_view) * inVel).xy); // should be removed by compiler if align/stretch is not used
+    float particleLifetime = lifetime;
+    if (inLife <= 0.0 || inLife > particleLifetime || !inShow) meshLocalPos = vec3(0.0);
+    vec2 quadXY = meshLocalPos.xy;
+    float nlife = clamp(inLife / particleLifetime, 0.0, 1.0);
+    vec3 paramDiv;
+    vec4 params = tex1Dlod_lerp(internalTex2, vec2(nlife, 0), paramDiv);
+    float scale = params.y;
+    float scaleDiv = paramDiv.x;
+    float alphaDiv = paramDiv.z;
+    scale += (scaleDiv * 2.0 - 1.0) * scaleDivMult * fract(rndFactor*10000.0);
+    texCoordsAlphaLife = vec4(quadXY * -0.5 + 0.5,    (alphaDiv * 2.0 - 1.0) * alphaDivMult * fract(rndFactor*1000.0),    nlife);
+    vec3 particlePos = inPos;
+    vec3 particlePosMoved = vec3(0.0);
+    mat2 rotMatrix;
+    mat3 localMat;
+    inAngle = atan(velocityV.x, velocityV.y); // not the fastest way, but easier to plug in; TODO: create rot matrix right from vectors
+
+    quadXY = rotate(quadXY, inAngle, rotMatrix);
+    vec3 localPos = billboard(particlePos, quadXY, localMat);
+    vec3 moveDir = inVel * stretch;
+    vec3 posPrev = inPos - moveDir;
+    posPrev += particlePosMoved;
+    vec2 centerToVertexV = normalize((mat3(matrix_view) * localPos).xy);
+    float interpolation = dot(-velocityV, centerToVertexV) * 0.5 + 0.5;
+    particlePos = mix(particlePos, posPrev, interpolation);
+
+    localPos *= scale * emitterScale;
+    localPos += particlePos;
+    gl_Position = matrix_viewProjection * vec4(localPos.xyz, 1.0);
+}
+^PS^precision highp float;
+
+
+vec3 gammaCorrectInput(vec3 color) {
+    return pow(color, vec3(2.2));
+}
+float gammaCorrectInput(float color) {
+    return pow(color, 2.2);
+}
+vec4 gammaCorrectInput(vec4 color) {
+    return vec4(pow(color.rgb, vec3(2.2)), color.a);
+}
+vec4 texture2DSRGB(sampler2D tex, vec2 uv) {
+    vec4 rgba = texture2D(tex, uv);
+    rgba.rgb = gammaCorrectInput(rgba.rgb);
+    return rgba;
+}
+vec4 textureCubeSRGB(samplerCube tex, vec3 uvw) {
+    vec4 rgba = textureCube(tex, uvw);
+    rgba.rgb = gammaCorrectInput(rgba.rgb);
+    return rgba;
+}
+vec3 gammaCorrectOutput(vec3 color) {
+    color += vec3(0.0000001);
+    return pow(color, vec3(0.45));
+}
+uniform float exposure;
+vec3 toneMap(vec3 color) {
+    return color * exposure;
+}
+vec3 addFog(vec3 color) {
+    return color;
+}
+varying vec4 texCoordsAlphaLife;
+uniform sampler2D colorMap;
+uniform sampler2D internalTex3;
+uniform float graphSampleSize;
+uniform float graphNumSamples;
+uniform float camera_far;
+uniform float softening;
+uniform float colorMult;
+float saturate(float x) {
+    return clamp(x, 0.0, 1.0);
+}
+float unpackFloat(vec4 rgbaDepth) {
+    const vec4 bitShift = vec4(1.0 / (256.0 * 256.0 * 256.0), 1.0 / (256.0 * 256.0), 1.0 / 256.0, 1.0);
+    float depth = dot(rgbaDepth, bitShift);
+    return depth;
+}
+void main(void) {
+    vec4 tex         = texture2DSRGB(colorMap, texCoordsAlphaLife.xy);
+    vec4 ramp     = texture2DSRGB(internalTex3, vec2(texCoordsAlphaLife.w, 0.0));
+    ramp.rgb *= colorMult;
+    ramp.a += texCoordsAlphaLife.z;
+    vec3 rgb =     tex.rgb * ramp.rgb;
+    float a =         tex.a * ramp.a;
+
+    rgb *= saturate(gammaCorrectInput(a));
+    if ((rgb.r + rgb.g + rgb.b) < 0.000001) discard;
+    rgb = addFog(rgb);
+    rgb = toneMap(rgb);
+    rgb = gammaCorrectOutput(rgb);
+    gl_FragColor = vec4(rgb, a);
+}
+^AT^particle_vertexData,ATTR0,^SH^pick_screenspace^VS^attribute vec3 vertex_position;
+uniform mat4 matrix_model;
+uniform mat4 matrix_viewProjection;
+vec3 dPositionW;
+mat4 dModelMatrix;
+mat4 getModelMatrix() {
+    return matrix_model;
+}
+vec4 getPosition() {
+    vec4 posW = vec4((getModelMatrix() * vec4(vertex_position, 1.0)).xy, 0.0, 1.0);
+    dPositionW = posW.xyz;
+    return posW;
+}
+vec3 getWorldPosition() {
+    return dPositionW;
+}
+void main(void)
+{
+   gl_Position = getPosition();
+}
+^PS^precision highp float;
+
+uniform vec4 uColor;void main(void)
+{
+    gl_FragColor = uColor;
+}
+^AT^vertex_position,POSITION,^SH^-341078223^VS^varying vec3 vPositionW;
+varying vec2 vUV0_1;
+
+
+
+attribute vec3 vertex_position;
+attribute vec3 vertex_normal;
+attribute vec4 vertex_tangent;
+attribute vec2 vertex_texCoord0;
+attribute vec2 vertex_texCoord1;
+attribute vec4 vertex_color;
+uniform mat4 matrix_viewProjection;
+uniform mat4 matrix_model;
+uniform mat3 matrix_normal;
+vec3 dPositionW;
+mat4 dModelMatrix;
+mat3 dNormalMatrix;
+vec3 dLightPosW;
+vec3 dLightDirNormW;
+vec3 dNormalW;
+
+vec2 getUv0() {
+    return vertex_texCoord0;
+}
+uniform vec4 texture_emissiveMapTransform;
+uniform vec4 texture_opacityMapTransform;
+mat4 getModelMatrix() {
+    return matrix_model;
+}
+vec4 getPosition() {
+    dModelMatrix = getModelMatrix();
+    vec4 posW = dModelMatrix * vec4(vertex_position, 1.0);
+    dPositionW = posW.xyz;
+    return matrix_viewProjection * posW;
+}
+vec3 getWorldPosition() {
+    return dPositionW;
+}
+
+
+void main(void) {
+    gl_Position = getPosition();
+   vPositionW    = getWorldPosition();
+   vec2 uv0 = getUv0();
+   vUV0_1 = uv0 * texture_emissiveMapTransform.xy + texture_emissiveMapTransform.zw;
+}^PS^#extension GL_OES_standard_derivatives : enable
+
+precision highp float;
+
+varying vec3 vPositionW;
+varying vec2 vUV0_1;
+
+uniform vec3 view_position;
+uniform vec3 light_globalAmbient;
+float square(float x) {
+    return x*x;
+}
+float saturate(float x) {
+    return clamp(x, 0.0, 1.0);
+}
+vec3 saturate(vec3 x) {
+    return clamp(x, vec3(0.0), vec3(1.0));
+}
+vec4 dReflection;
+vec3 dAlbedo;
+vec3 dNormalW;
+vec3 dViewDirW;
+vec3 dDiffuseLight;
+vec3 dSpecularLight;
+vec3 dLightDirNormW;
+vec3 dSpecularity;
+float dGlossiness;
+float dAlpha;
+
+vec4 texture2DSRGB(sampler2D tex, vec2 uv) {
+    return texture2D(tex, uv);
+}
+vec4 textureCubeSRGB(samplerCube tex, vec3 uvw) {
+    return textureCube(tex, uvw);
+}
+vec3 gammaCorrectOutput(vec3 color) {
+    return color;
+}
+vec3 gammaCorrectInput(vec3 color) {
+    return color;
+}
+float gammaCorrectInput(float color) {
+    return color;
+}
+vec4 gammaCorrectInput(vec4 color) {
+    return color;
+}
+vec3 toneMap(vec3 color) {
+    return color;
+}
+vec3 addFog(vec3 color) {
+    return color;
+}
+uniform vec3 material_diffuse;
+void getAlbedo() {
+    dAlbedo = material_diffuse.rgb;
+}
+uniform sampler2D texture_opacityMap;
+uniform float material_opacity;
+void getOpacity() {
+    dAlpha = texture2D(texture_opacityMap, vUV0_1).a * material_opacity;
+}
+uniform sampler2D texture_emissiveMap;
+vec3 getEmission() {
+    return texture2DSRGB(texture_emissiveMap, vUV0_1).rgb;
+}
+float antiAliasGlossiness(float power) {
+    return power;
+}
+uniform vec3 material_specular;
+void getSpecularity() {
+    dSpecularity = material_specular;
+}
+uniform float material_shininess;
+void getGlossiness() {
+    dGlossiness = material_shininess + 0.0000001;
+}
+// Schlick's approximation
+uniform float material_fresnelFactor; // unused
+void getFresnel() {
+    float fresnel = 1.0 - max(dot(dNormalW, dViewDirW), 0.0);
+    float fresnel2 = fresnel * fresnel;
+    fresnel *= fresnel2 * fresnel2;
+    fresnel *= dGlossiness * dGlossiness;
+    dSpecularity = dSpecularity + (1.0 - dSpecularity) * fresnel;
+}
+// Energy-conserving (hopefully) Blinn-Phong
+float getLightSpecular() {
+    vec3 h = normalize( -dLightDirNormW + dViewDirW );
+    float nh = max( dot( h, dNormalW ), 0.0 );
+    float specPow = exp2(dGlossiness * 11.0); // glossiness is linear, power is not; 0 - 2048
+    specPow = antiAliasGlossiness(specPow);
+    // Hack: On Mac OS X, calling pow with zero for the exponent generates hideous artifacts so bias up a little
+    specPow = max(specPow, 0.0001);
+    return pow(nh, specPow) * (specPow + 2.0) / 8.0;
+}
+vec3 combineColor() {
+    return mix(dAlbedo * dDiffuseLight, dSpecularLight + dReflection.rgb * dReflection.a, dSpecularity);
+}
+
+void addAmbient() {
+    dDiffuseLight += light_globalAmbient;
+}
+
+void main(void) {
+    dDiffuseLight = vec3(0);
+    dSpecularLight = vec3(0);
+    dReflection = vec4(0);
+    dSpecularity = vec3(0);
+   getOpacity();
+   getAlbedo();
+   addAmbient();
+
+   gl_FragColor.rgb = combineColor();
+   gl_FragColor.rgb += getEmission();
+   gl_FragColor.rgb = addFog(gl_FragColor.rgb);
+   gl_FragColor.rgb = toneMap(gl_FragColor.rgb);
+   gl_FragColor.rgb = gammaCorrectOutput(gl_FragColor.rgb);
+gl_FragColor.a = dAlpha;
+
+}
+^AT^vertex_position,POSITION,vertex_texCoord0,TEXCOORD0,^SH^-548817127^VS^varying vec3 vPositionW;
+varying vec2 vUv0;
+
+
+
+attribute vec3 vertex_position;
+attribute vec3 vertex_normal;
+attribute vec4 vertex_tangent;
+attribute vec2 vertex_texCoord0;
+attribute vec2 vertex_texCoord1;
+attribute vec4 vertex_color;
+uniform mat4 matrix_viewProjection;
+uniform mat4 matrix_model;
+uniform mat3 matrix_normal;
+vec3 dPositionW;
+mat4 dModelMatrix;
+mat3 dNormalMatrix;
+vec3 dLightPosW;
+vec3 dLightDirNormW;
+vec3 dNormalW;
+
+vec2 getUv0() {
+    return vertex_texCoord0;
+}
+mat4 getModelMatrix() {
+    return matrix_model;
+}
+vec4 getPosition() {
+    dModelMatrix = getModelMatrix();
+    vec4 posW = dModelMatrix * vec4(vertex_position, 1.0);
+    dPositionW = posW.xyz;
+    return matrix_viewProjection * posW;
+}
+vec3 getWorldPosition() {
+    return dPositionW;
+}
+
+
+void main(void) {
+    gl_Position = getPosition();
+   vPositionW    = getWorldPosition();
+   vec2 uv0 = getUv0();
+   vUv0 = uv0;
+}^PS^#extension GL_OES_standard_derivatives : enable
+
+precision highp float;
+
+varying vec3 vPositionW;
+varying vec2 vUv0;
+
+uniform vec3 view_position;
+uniform vec3 light_globalAmbient;
+float square(float x) {
+    return x*x;
+}
+float saturate(float x) {
+    return clamp(x, 0.0, 1.0);
+}
+vec3 saturate(vec3 x) {
+    return clamp(x, vec3(0.0), vec3(1.0));
+}
+vec4 dReflection;
+vec3 dAlbedo;
+vec3 dDiffuseLight;
+vec3 dSpecularLight;
+vec3 dSpecularity;
+float dAlpha;
+
+vec4 texture2DSRGB(sampler2D tex, vec2 uv) {
+    return texture2D(tex, uv);
+}
+vec4 textureCubeSRGB(samplerCube tex, vec3 uvw) {
+    return textureCube(tex, uvw);
+}
+vec3 gammaCorrectOutput(vec3 color) {
+    return color;
+}
+vec3 gammaCorrectInput(vec3 color) {
+    return color;
+}
+float gammaCorrectInput(float color) {
+    return color;
+}
+vec4 gammaCorrectInput(vec4 color) {
+    return color;
+}
+vec3 toneMap(vec3 color) {
+    return color;
+}
+vec3 addFog(vec3 color) {
+    return color;
+}
+uniform vec3 material_diffuse;
+void getAlbedo() {
+    dAlbedo = material_diffuse.rgb;
+}
+uniform sampler2D texture_opacityMap;
+uniform float material_opacity;
+void getOpacity() {
+    dAlpha = texture2D(texture_opacityMap, vUv0).a * material_opacity;
+}
+uniform sampler2D texture_emissiveMap;
+vec3 getEmission() {
+    return texture2DSRGB(texture_emissiveMap, vUv0).rgb;
+}
+vec3 combineColor() {
+    return dAlbedo * dDiffuseLight;
+}
+
+void addAmbient() {
+    dDiffuseLight += light_globalAmbient;
+}
+
+void main(void) {
+    dDiffuseLight = vec3(0);
+    dSpecularLight = vec3(0);
+    dReflection = vec4(0);
+    dSpecularity = vec3(0);
+   getOpacity();
+   getAlbedo();
+   addAmbient();
+
+   gl_FragColor.rgb = combineColor();
+   gl_FragColor.rgb += getEmission();
+   gl_FragColor.rgb = addFog(gl_FragColor.rgb);
+   gl_FragColor.rgb = toneMap(gl_FragColor.rgb);
+   gl_FragColor.rgb = gammaCorrectOutput(gl_FragColor.rgb);
+gl_FragColor.rgb *= dAlpha;
+gl_FragColor.a = dAlpha;
+
+}
+^AT^vertex_position,POSITION,vertex_texCoord0,TEXCOORD0,^SH^-761713021^VS^varying vec3 vPositionW;
+varying vec2 vUv0;
+
+
+
+attribute vec3 vertex_position;
+attribute vec3 vertex_normal;
+attribute vec4 vertex_tangent;
+attribute vec2 vertex_texCoord0;
+attribute vec2 vertex_texCoord1;
+attribute vec4 vertex_color;
+uniform mat4 matrix_viewProjection;
+uniform mat4 matrix_model;
+uniform mat3 matrix_normal;
+vec3 dPositionW;
+mat4 dModelMatrix;
+mat3 dNormalMatrix;
+vec3 dLightPosW;
+vec3 dLightDirNormW;
+vec3 dNormalW;
+
+vec2 getUv0() {
+    return vertex_texCoord0;
+}
+mat4 getModelMatrix() {
+    return matrix_model;
+}
+vec4 getPosition() {
+    vec4 posW = vec4((getModelMatrix() * vec4(vertex_position, 1.0)).xy, 0.0, 1.0);
+    dPositionW = posW.xyz;
+    return posW;
+}
+vec3 getWorldPosition() {
+    return dPositionW;
+}
+
+
+void main(void) {
+    gl_Position = getPosition();
+   vPositionW    = getWorldPosition();
+   vec2 uv0 = getUv0();
+   vUv0 = uv0;
+}^PS^#extension GL_OES_standard_derivatives : enable
+
+precision highp float;
+
+varying vec3 vPositionW;
+varying vec2 vUv0;
+
+uniform vec3 view_position;
+uniform vec3 light_globalAmbient;
+float square(float x) {
+    return x*x;
+}
+float saturate(float x) {
+    return clamp(x, 0.0, 1.0);
+}
+vec3 saturate(vec3 x) {
+    return clamp(x, vec3(0.0), vec3(1.0));
+}
+vec4 dReflection;
+vec3 dAlbedo;
+vec3 dDiffuseLight;
+vec3 dSpecularLight;
+vec3 dSpecularity;
+float dAlpha;
+
+vec4 texture2DSRGB(sampler2D tex, vec2 uv) {
+    return texture2D(tex, uv);
+}
+vec4 textureCubeSRGB(samplerCube tex, vec3 uvw) {
+    return textureCube(tex, uvw);
+}
+vec3 gammaCorrectOutput(vec3 color) {
+    return color;
+}
+vec3 gammaCorrectInput(vec3 color) {
+    return color;
+}
+float gammaCorrectInput(float color) {
+    return color;
+}
+vec4 gammaCorrectInput(vec4 color) {
+    return color;
+}
+vec3 toneMap(vec3 color) {
+    return color;
+}
+vec3 addFog(vec3 color) {
+    return color;
+}
+uniform vec3 material_diffuse;
+void getAlbedo() {
+    dAlbedo = material_diffuse.rgb;
+}
+uniform sampler2D texture_opacityMap;
+uniform float material_opacity;
+void getOpacity() {
+    dAlpha = texture2D(texture_opacityMap, vUv0).a * material_opacity;
+}
+uniform sampler2D texture_emissiveMap;
+vec3 getEmission() {
+    return texture2DSRGB(texture_emissiveMap, vUv0).rgb;
+}
+vec3 combineColor() {
+    return dAlbedo * dDiffuseLight;
+}
+
+void addAmbient() {
+    dDiffuseLight += light_globalAmbient;
+}
+
+void main(void) {
+    dDiffuseLight = vec3(0);
+    dSpecularLight = vec3(0);
+    dReflection = vec4(0);
+    dSpecularity = vec3(0);
+   getOpacity();
+   getAlbedo();
+   addAmbient();
+
+   gl_FragColor.rgb = combineColor();
+   gl_FragColor.rgb += getEmission();
+   gl_FragColor.rgb = addFog(gl_FragColor.rgb);
+   gl_FragColor.rgb = toneMap(gl_FragColor.rgb);
+   gl_FragColor.rgb = gammaCorrectOutput(gl_FragColor.rgb);
+gl_FragColor.a = dAlpha;
+
+}
+^AT^vertex_position,POSITION,vertex_texCoord0,TEXCOORD0,^SH^-1532211141^VS^varying vec3 vPositionW;
+varying vec2 vUv0;
+
+
+
+attribute vec3 vertex_position;
+attribute vec3 vertex_normal;
+attribute vec4 vertex_tangent;
+attribute vec2 vertex_texCoord0;
+attribute vec2 vertex_texCoord1;
+attribute vec4 vertex_color;
+uniform mat4 matrix_viewProjection;
+uniform mat4 matrix_model;
+uniform mat3 matrix_normal;
+vec3 dPositionW;
+mat4 dModelMatrix;
+mat3 dNormalMatrix;
+vec3 dLightPosW;
+vec3 dLightDirNormW;
+vec3 dNormalW;
+
+vec2 getUv0() {
+    return vertex_texCoord0;
+}
+mat4 getModelMatrix() {
+    return matrix_model;
+}
+vec4 getPosition() {
+    dModelMatrix = getModelMatrix();
+    vec4 posW = dModelMatrix * vec4(vertex_position, 1.0);
+    dPositionW = posW.xyz;
+    return matrix_viewProjection * posW;
+}
+vec3 getWorldPosition() {
+    return dPositionW;
+}
+
+
+void main(void) {
+    gl_Position = getPosition();
+   vPositionW    = getWorldPosition();
+   vec2 uv0 = getUv0();
+   vUv0 = uv0;
+}^PS^#extension GL_OES_standard_derivatives : enable
+
+precision highp float;
+
+varying vec3 vPositionW;
+varying vec2 vUv0;
+
+uniform vec3 view_position;
+uniform vec3 light_globalAmbient;
+float square(float x) {
+    return x*x;
+}
+float saturate(float x) {
+    return clamp(x, 0.0, 1.0);
+}
+vec3 saturate(vec3 x) {
+    return clamp(x, vec3(0.0), vec3(1.0));
+}
+vec4 dReflection;
+vec3 dAlbedo;
+vec3 dNormalW;
+vec3 dViewDirW;
+vec3 dDiffuseLight;
+vec3 dSpecularLight;
+vec3 dLightDirNormW;
+vec3 dSpecularity;
+float dGlossiness;
+float dAlpha;
+
+vec4 texture2DSRGB(sampler2D tex, vec2 uv) {
+    return texture2D(tex, uv);
+}
+vec4 textureCubeSRGB(samplerCube tex, vec3 uvw) {
+    return textureCube(tex, uvw);
+}
+vec3 gammaCorrectOutput(vec3 color) {
+    return color;
+}
+vec3 gammaCorrectInput(vec3 color) {
+    return color;
+}
+float gammaCorrectInput(float color) {
+    return color;
+}
+vec4 gammaCorrectInput(vec4 color) {
+    return color;
+}
+vec3 toneMap(vec3 color) {
+    return color;
+}
+vec3 addFog(vec3 color) {
+    return color;
+}
+uniform vec3 material_diffuse;
+void getAlbedo() {
+    dAlbedo = material_diffuse.rgb;
+}
+uniform sampler2D texture_opacityMap;
+uniform float material_opacity;
+void getOpacity() {
+    dAlpha = texture2D(texture_opacityMap, vUv0).a * material_opacity;
+}
+uniform sampler2D texture_emissiveMap;
+vec3 getEmission() {
+    return texture2DSRGB(texture_emissiveMap, vUv0).rgb;
+}
+float antiAliasGlossiness(float power) {
+    return power;
+}
+uniform vec3 material_specular;
+void getSpecularity() {
+    dSpecularity = material_specular;
+}
+uniform float material_shininess;
+void getGlossiness() {
+    dGlossiness = material_shininess + 0.0000001;
+}
+// Schlick's approximation
+uniform float material_fresnelFactor; // unused
+void getFresnel() {
+    float fresnel = 1.0 - max(dot(dNormalW, dViewDirW), 0.0);
+    float fresnel2 = fresnel * fresnel;
+    fresnel *= fresnel2 * fresnel2;
+    fresnel *= dGlossiness * dGlossiness;
+    dSpecularity = dSpecularity + (1.0 - dSpecularity) * fresnel;
+}
+// Energy-conserving (hopefully) Blinn-Phong
+float getLightSpecular() {
+    vec3 h = normalize( -dLightDirNormW + dViewDirW );
+    float nh = max( dot( h, dNormalW ), 0.0 );
+    float specPow = exp2(dGlossiness * 11.0); // glossiness is linear, power is not; 0 - 2048
+    specPow = antiAliasGlossiness(specPow);
+    // Hack: On Mac OS X, calling pow with zero for the exponent generates hideous artifacts so bias up a little
+    specPow = max(specPow, 0.0001);
+    return pow(nh, specPow) * (specPow + 2.0) / 8.0;
+}
+vec3 combineColor() {
+    return mix(dAlbedo * dDiffuseLight, dSpecularLight + dReflection.rgb * dReflection.a, dSpecularity);
+}
+
+void addAmbient() {
+    dDiffuseLight += light_globalAmbient;
+}
+
+void main(void) {
+    dDiffuseLight = vec3(0);
+    dSpecularLight = vec3(0);
+    dReflection = vec4(0);
+    dSpecularity = vec3(0);
+   getOpacity();
+   getAlbedo();
+   addAmbient();
+
+   gl_FragColor.rgb = combineColor();
+   gl_FragColor.rgb += getEmission();
+   gl_FragColor.rgb = addFog(gl_FragColor.rgb);
+   gl_FragColor.rgb = toneMap(gl_FragColor.rgb);
+   gl_FragColor.rgb = gammaCorrectOutput(gl_FragColor.rgb);
+gl_FragColor.a = dAlpha;
+
+}
+^AT^vertex_position,POSITION,vertex_texCoord0,TEXCOORD0,^SH^-423451104^VS^varying vec3 vPositionW;
+varying vec2 vUv0;
+
+
+
+attribute vec3 vertex_position;
+attribute vec3 vertex_normal;
+attribute vec4 vertex_tangent;
+attribute vec2 vertex_texCoord0;
+attribute vec2 vertex_texCoord1;
+attribute vec4 vertex_color;
+uniform mat4 matrix_viewProjection;
+uniform mat4 matrix_model;
+uniform mat3 matrix_normal;
+vec3 dPositionW;
+mat4 dModelMatrix;
+mat3 dNormalMatrix;
+vec3 dLightPosW;
+vec3 dLightDirNormW;
+vec3 dNormalW;
+
+vec2 getUv0() {
+    return vertex_texCoord0;
+}
+mat4 getModelMatrix() {
+    return matrix_model;
+}
+vec4 getPosition() {
+    dModelMatrix = getModelMatrix();
+    vec4 posW = dModelMatrix * vec4(vertex_position, 1.0);
+    dPositionW = posW.xyz;
+    return matrix_viewProjection * posW;
+}
+vec3 getWorldPosition() {
+    return dPositionW;
+}
+
+
+void main(void) {
+    gl_Position = getPosition();
+   vPositionW    = getWorldPosition();
+   vec2 uv0 = getUv0();
+   vUv0 = uv0;
+}^PS^#extension GL_OES_standard_derivatives : enable
+
+precision highp float;
+
+varying vec3 vPositionW;
+varying vec2 vUv0;
+
+uniform vec3 view_position;
+uniform vec3 light_globalAmbient;
+float square(float x) {
+    return x*x;
+}
+float saturate(float x) {
+    return clamp(x, 0.0, 1.0);
+}
+vec3 saturate(vec3 x) {
+    return clamp(x, vec3(0.0), vec3(1.0));
+}
+vec4 dReflection;
+vec3 dAlbedo;
+vec3 dNormalW;
+vec3 dViewDirW;
+vec3 dDiffuseLight;
+vec3 dSpecularLight;
+vec3 dLightDirNormW;
+vec3 dSpecularity;
+float dGlossiness;
+float dAlpha;
+
+vec4 texture2DSRGB(sampler2D tex, vec2 uv) {
+    return texture2D(tex, uv);
+}
+vec4 textureCubeSRGB(samplerCube tex, vec3 uvw) {
+    return textureCube(tex, uvw);
+}
+vec3 gammaCorrectOutput(vec3 color) {
+    return color;
+}
+vec3 gammaCorrectInput(vec3 color) {
+    return color;
+}
+float gammaCorrectInput(float color) {
+    return color;
+}
+vec4 gammaCorrectInput(vec4 color) {
+    return color;
+}
+vec3 toneMap(vec3 color) {
+    return color;
+}
+vec3 addFog(vec3 color) {
+    return color;
+}
+uniform sampler2D texture_diffuseMap;
+void getAlbedo() {
+    dAlbedo = texture2DSRGB(texture_diffuseMap, vUv0).rgb;
+}
+uniform sampler2D texture_opacityMap;
+void getOpacity() {
+    dAlpha = texture2D(texture_opacityMap, vUv0).a;
+}
+uniform sampler2D texture_emissiveMap;
+vec3 getEmission() {
+    return texture2DSRGB(texture_emissiveMap, vUv0).rgb;
+}
+float antiAliasGlossiness(float power) {
+    return power;
+}
+uniform vec3 material_specular;
+void getSpecularity() {
+    dSpecularity = material_specular;
+}
+uniform float material_shininess;
+void getGlossiness() {
+    dGlossiness = material_shininess + 0.0000001;
+}
+// Schlick's approximation
+uniform float material_fresnelFactor; // unused
+void getFresnel() {
+    float fresnel = 1.0 - max(dot(dNormalW, dViewDirW), 0.0);
+    float fresnel2 = fresnel * fresnel;
+    fresnel *= fresnel2 * fresnel2;
+    fresnel *= dGlossiness * dGlossiness;
+    dSpecularity = dSpecularity + (1.0 - dSpecularity) * fresnel;
+}
+// Energy-conserving (hopefully) Blinn-Phong
+float getLightSpecular() {
+    vec3 h = normalize( -dLightDirNormW + dViewDirW );
+    float nh = max( dot( h, dNormalW ), 0.0 );
+    float specPow = exp2(dGlossiness * 11.0); // glossiness is linear, power is not; 0 - 2048
+    specPow = antiAliasGlossiness(specPow);
+    // Hack: On Mac OS X, calling pow with zero for the exponent generates hideous artifacts so bias up a little
+    specPow = max(specPow, 0.0001);
+    return pow(nh, specPow) * (specPow + 2.0) / 8.0;
+}
+vec3 combineColor() {
+    return mix(dAlbedo * dDiffuseLight, dSpecularLight + dReflection.rgb * dReflection.a, dSpecularity);
+}
+
+void addAmbient() {
+    dDiffuseLight += light_globalAmbient;
+}
+
+void main(void) {
+    dDiffuseLight = vec3(0);
+    dSpecularLight = vec3(0);
+    dReflection = vec4(0);
+    dSpecularity = vec3(0);
+   getOpacity();
+   getAlbedo();
+   addAmbient();
+
+   gl_FragColor.rgb = combineColor();
+   gl_FragColor.rgb += getEmission();
+   gl_FragColor.rgb = addFog(gl_FragColor.rgb);
+   gl_FragColor.rgb = toneMap(gl_FragColor.rgb);
+   gl_FragColor.rgb = gammaCorrectOutput(gl_FragColor.rgb);
+gl_FragColor.a = dAlpha;
+
+}
+^AT^vertex_position,POSITION,vertex_texCoord0,TEXCOORD0,^SH^-902008265^VS^varying vec3 vPositionW;
+varying vec2 vUv0;
+
+
+
+attribute vec3 vertex_position;
+attribute vec3 vertex_normal;
+attribute vec4 vertex_tangent;
+attribute vec2 vertex_texCoord0;
+attribute vec2 vertex_texCoord1;
+attribute vec4 vertex_color;
+uniform mat4 matrix_viewProjection;
+uniform mat4 matrix_model;
+uniform mat3 matrix_normal;
+vec3 dPositionW;
+mat4 dModelMatrix;
+mat3 dNormalMatrix;
+vec3 dLightPosW;
+vec3 dLightDirNormW;
+vec3 dNormalW;
+
+vec2 getUv0() {
+    return vertex_texCoord0;
+}
+mat4 getModelMatrix() {
+    return matrix_model;
+}
+vec4 getPosition() {
+    dModelMatrix = getModelMatrix();
+    vec4 posW = dModelMatrix * vec4(vertex_position, 1.0);
+    dPositionW = posW.xyz;
+    return matrix_viewProjection * posW;
+}
+vec3 getWorldPosition() {
+    return dPositionW;
+}
+
+
+void main(void) {
+    gl_Position = getPosition();
+   vPositionW    = getWorldPosition();
+   vec2 uv0 = getUv0();
+   vUv0 = uv0;
+}^PS^#extension GL_OES_standard_derivatives : enable
+
+precision highp float;
+
+varying vec3 vPositionW;
+varying vec2 vUv0;
+
+uniform vec3 view_position;
+uniform vec3 light_globalAmbient;
+float square(float x) {
+    return x*x;
+}
+float saturate(float x) {
+    return clamp(x, 0.0, 1.0);
+}
+vec3 saturate(vec3 x) {
+    return clamp(x, vec3(0.0), vec3(1.0));
+}
+vec4 dReflection;
+vec3 dAlbedo;
+vec3 dNormalW;
+vec3 dViewDirW;
+vec3 dDiffuseLight;
+vec3 dSpecularLight;
+vec3 dLightDirNormW;
+vec3 dSpecularity;
+float dGlossiness;
+float dAlpha;
+
+vec4 texture2DSRGB(sampler2D tex, vec2 uv) {
+    return texture2D(tex, uv);
+}
+vec4 textureCubeSRGB(samplerCube tex, vec3 uvw) {
+    return textureCube(tex, uvw);
+}
+vec3 gammaCorrectOutput(vec3 color) {
+    return color;
+}
+vec3 gammaCorrectInput(vec3 color) {
+    return color;
+}
+float gammaCorrectInput(float color) {
+    return color;
+}
+vec4 gammaCorrectInput(vec4 color) {
+    return color;
+}
+vec3 toneMap(vec3 color) {
+    return color;
+}
+vec3 addFog(vec3 color) {
+    return color;
+}
+uniform vec3 material_diffuse;
+void getAlbedo() {
+    dAlbedo = material_diffuse.rgb;
+}
+uniform sampler2D texture_opacityMap;
+uniform float material_opacity;
+void getOpacity() {
+    dAlpha = texture2D(texture_opacityMap, vUv0).a * material_opacity;
+}
+uniform sampler2D texture_emissiveMap;
+vec3 getEmission() {
+    return texture2DSRGB(texture_emissiveMap, vUv0).rgb;
+}
+float antiAliasGlossiness(float power) {
+    return power;
+}
+uniform vec3 material_specular;
+void getSpecularity() {
+    dSpecularity = material_specular;
+}
+uniform float material_shininess;
+void getGlossiness() {
+    dGlossiness = material_shininess + 0.0000001;
+}
+// Schlick's approximation
+uniform float material_fresnelFactor; // unused
+void getFresnel() {
+    float fresnel = 1.0 - max(dot(dNormalW, dViewDirW), 0.0);
+    float fresnel2 = fresnel * fresnel;
+    fresnel *= fresnel2 * fresnel2;
+    fresnel *= dGlossiness * dGlossiness;
+    dSpecularity = dSpecularity + (1.0 - dSpecularity) * fresnel;
+}
+// Energy-conserving (hopefully) Blinn-Phong
+float getLightSpecular() {
+    vec3 h = normalize( -dLightDirNormW + dViewDirW );
+    float nh = max( dot( h, dNormalW ), 0.0 );
+    float specPow = exp2(dGlossiness * 11.0); // glossiness is linear, power is not; 0 - 2048
+    specPow = antiAliasGlossiness(specPow);
+    // Hack: On Mac OS X, calling pow with zero for the exponent generates hideous artifacts so bias up a little
+    specPow = max(specPow, 0.0001);
+    return pow(nh, specPow) * (specPow + 2.0) / 8.0;
+}
+vec3 combineColor() {
+    return mix(dAlbedo * dDiffuseLight, dSpecularLight + dReflection.rgb * dReflection.a, dSpecularity);
+}
+
+void addAmbient() {
+    dDiffuseLight += light_globalAmbient;
+}
+
+void main(void) {
+    dDiffuseLight = vec3(0);
+    dSpecularLight = vec3(0);
+    dReflection = vec4(0);
+    dSpecularity = vec3(0);
+   getOpacity();
+   getAlbedo();
+   addAmbient();
+
+   gl_FragColor.rgb = combineColor();
+   gl_FragColor.rgb += getEmission();
+   gl_FragColor.rgb = addFog(gl_FragColor.rgb);
+   gl_FragColor.rgb = toneMap(gl_FragColor.rgb);
+   gl_FragColor.rgb = gammaCorrectOutput(gl_FragColor.rgb);
+gl_FragColor.a = dAlpha;
+
+}
+^AT^vertex_position,POSITION,vertex_texCoord0,TEXCOORD0,^SH^-323306635^VS^varying vec3 vPositionW;
+varying vec2 vUv0;
+
+
+
+attribute vec3 vertex_position;
+attribute vec3 vertex_normal;
+attribute vec4 vertex_tangent;
+attribute vec2 vertex_texCoord0;
+attribute vec2 vertex_texCoord1;
+attribute vec4 vertex_color;
+uniform mat4 matrix_viewProjection;
+uniform mat4 matrix_model;
+uniform mat3 matrix_normal;
+vec3 dPositionW;
+mat4 dModelMatrix;
+mat3 dNormalMatrix;
+vec3 dLightPosW;
+vec3 dLightDirNormW;
+vec3 dNormalW;
+
+vec2 getUv0() {
+    return vertex_texCoord0;
+}
+mat4 getModelMatrix() {
+    return matrix_model;
+}
+vec4 getPosition() {
+    vec4 posW = vec4((getModelMatrix() * vec4(vertex_position, 1.0)).xy, 0.0, 1.0);
+    dPositionW = posW.xyz;
+    return posW;
+}
+vec3 getWorldPosition() {
+    return dPositionW;
+}
+
+
+void main(void) {
+    gl_Position = getPosition();
+   vPositionW    = getWorldPosition();
+   vec2 uv0 = getUv0();
+   vUv0 = uv0;
+}^PS^#extension GL_OES_standard_derivatives : enable
+
+precision highp float;
+
+varying vec3 vPositionW;
+varying vec2 vUv0;
+
+uniform vec3 view_position;
+uniform vec3 light_globalAmbient;
+float square(float x) {
+    return x*x;
+}
+float saturate(float x) {
+    return clamp(x, 0.0, 1.0);
+}
+vec3 saturate(vec3 x) {
+    return clamp(x, vec3(0.0), vec3(1.0));
+}
+vec4 dReflection;
+vec3 dAlbedo;
+vec3 dDiffuseLight;
+vec3 dSpecularLight;
+vec3 dSpecularity;
+float dAlpha;
+
+vec4 texture2DSRGB(sampler2D tex, vec2 uv) {
+    return texture2D(tex, uv);
+}
+vec4 textureCubeSRGB(samplerCube tex, vec3 uvw) {
+    return textureCube(tex, uvw);
+}
+vec3 gammaCorrectOutput(vec3 color) {
+    return color;
+}
+vec3 gammaCorrectInput(vec3 color) {
+    return color;
+}
+float gammaCorrectInput(float color) {
+    return color;
+}
+vec4 gammaCorrectInput(vec4 color) {
+    return color;
+}
+vec3 toneMap(vec3 color) {
+    return color;
+}
+vec3 addFog(vec3 color) {
+    return color;
+}
+uniform vec3 material_diffuse;
+void getAlbedo() {
+    dAlbedo = material_diffuse.rgb;
+}
+uniform sampler2D texture_opacityMap;
+uniform float material_opacity;
+void getOpacity() {
+    dAlpha = texture2D(texture_opacityMap, vUv0).a * material_opacity;
+}
+uniform sampler2D texture_emissiveMap;
+vec3 getEmission() {
+    return texture2DSRGB(texture_emissiveMap, vUv0).rgb;
+}
+vec3 combineColor() {
+    return dAlbedo * dDiffuseLight;
+}
+
+void addAmbient() {
+    dDiffuseLight += light_globalAmbient;
+}
+
+void main(void) {
+    dDiffuseLight = vec3(0);
+    dSpecularLight = vec3(0);
+    dReflection = vec4(0);
+    dSpecularity = vec3(0);
+   getOpacity();
+   getAlbedo();
+   addAmbient();
+
+   gl_FragColor.rgb = combineColor();
+   gl_FragColor.rgb += getEmission();
+   gl_FragColor.rgb = addFog(gl_FragColor.rgb);
+   gl_FragColor.rgb = toneMap(gl_FragColor.rgb);
+   gl_FragColor.rgb = gammaCorrectOutput(gl_FragColor.rgb);
+gl_FragColor.rgb *= dAlpha;
+gl_FragColor.a = dAlpha;
+
+}
+^AT^vertex_position,POSITION,vertex_texCoord0,TEXCOORD0,^SH^-1682980867^VS^varying vec3 vPositionW;
+varying vec2 vUv0;
+
+
+
+attribute vec3 vertex_position;
+attribute vec3 vertex_normal;
+attribute vec4 vertex_tangent;
+attribute vec2 vertex_texCoord0;
+attribute vec2 vertex_texCoord1;
+attribute vec4 vertex_color;
+uniform mat4 matrix_viewProjection;
+uniform mat4 matrix_model;
+uniform mat3 matrix_normal;
+vec3 dPositionW;
+mat4 dModelMatrix;
+mat3 dNormalMatrix;
+vec3 dLightPosW;
+vec3 dLightDirNormW;
+vec3 dNormalW;
+
+vec2 getUv0() {
+    return vertex_texCoord0;
+}
+mat4 getModelMatrix() {
+    return matrix_model;
+}
+vec4 getPosition() {
+    vec4 posW = vec4((getModelMatrix() * vec4(vertex_position, 1.0)).xy, 0.0, 1.0);
+    dPositionW = posW.xyz;
+    return posW;
+}
+vec3 getWorldPosition() {
+    return dPositionW;
+}
+
+
+void main(void) {
+    gl_Position = getPosition();
+   vPositionW    = getWorldPosition();
+   vec2 uv0 = getUv0();
+   vUv0 = uv0;
+}^PS^#extension GL_OES_standard_derivatives : enable
+
+precision highp float;
+
+varying vec3 vPositionW;
+varying vec2 vUv0;
+
+uniform vec3 view_position;
+uniform vec3 light_globalAmbient;
+float square(float x) {
+    return x*x;
+}
+float saturate(float x) {
+    return clamp(x, 0.0, 1.0);
+}
+vec3 saturate(vec3 x) {
+    return clamp(x, vec3(0.0), vec3(1.0));
+}
+vec4 dReflection;
+vec3 dAlbedo;
+vec3 dDiffuseLight;
+vec3 dSpecularLight;
+vec3 dSpecularity;
+float dAlpha;
+
+vec4 texture2DSRGB(sampler2D tex, vec2 uv) {
+    return texture2D(tex, uv);
+}
+vec4 textureCubeSRGB(samplerCube tex, vec3 uvw) {
+    return textureCube(tex, uvw);
+}
+vec3 gammaCorrectOutput(vec3 color) {
+    return color;
+}
+vec3 gammaCorrectInput(vec3 color) {
+    return color;
+}
+float gammaCorrectInput(float color) {
+    return color;
+}
+vec4 gammaCorrectInput(vec4 color) {
+    return color;
+}
+vec3 toneMap(vec3 color) {
+    return color;
+}
+vec3 addFog(vec3 color) {
+    return color;
+}
+uniform vec3 material_diffuse;
+void getAlbedo() {
+    dAlbedo = material_diffuse.rgb;
+}
+uniform float material_opacity;
+void getOpacity() {
+    dAlpha = material_opacity;
+}
+uniform vec3 material_emissive;
+vec3 getEmission() {
+    return material_emissive;
+}
+vec3 combineColor() {
+    return dAlbedo * dDiffuseLight;
+}
+
+void addAmbient() {
+    dDiffuseLight += light_globalAmbient;
+}
+uniform sampler2D texture_msdfMap;
+float median(float r, float g, float b) {
+    return max(min(r, g), min(max(r, g), b));
+}
+vec4 applyMsdf(vec4 color) {
+    vec3 sample = texture2D(texture_msdfMap, vUv0).rgb;
+    float distance = median(sample.r, sample.g, sample.b) - 0.5;
+    vec4 msdf;
+    #ifdef GL_OES_standard_derivatives
+    vec4 background = vec4(0.0);
+    float opacity = clamp(distance/fwidth(distance) + 0.5, 0.0, 1.0);
+    msdf = mix(background, color, opacity);
+    if (msdf.a < 0.01) {
+        discard;
+    }
+    #else
+    msdf = color;
+    if (distance < 0.1) {
+        discard;
+    }
+    #endif
+    return msdf;
+}
+
+void main(void) {
+    dDiffuseLight = vec3(0);
+    dSpecularLight = vec3(0);
+    dReflection = vec4(0);
+    dSpecularity = vec3(0);
+   getOpacity();
+   getAlbedo();
+   addAmbient();
+
+   gl_FragColor.rgb = combineColor();
+   gl_FragColor.rgb += getEmission();
+   gl_FragColor.rgb = addFog(gl_FragColor.rgb);
+   gl_FragColor.rgb = toneMap(gl_FragColor.rgb);
+   gl_FragColor.rgb = gammaCorrectOutput(gl_FragColor.rgb);
+gl_FragColor.rgb *= dAlpha;
+gl_FragColor.a = dAlpha;
+   gl_FragColor = applyMsdf(gl_FragColor);
+
+}
+^AT^vertex_position,POSITION,vertex_texCoord0,TEXCOORD0,^SH^-1079714919^VS^varying vec3 vPositionW;
+varying vec2 vUv0;
+
+
+
+attribute vec3 vertex_position;
+attribute vec3 vertex_normal;
+attribute vec4 vertex_tangent;
+attribute vec2 vertex_texCoord0;
+attribute vec2 vertex_texCoord1;
+attribute vec4 vertex_color;
+uniform mat4 matrix_viewProjection;
+uniform mat4 matrix_model;
+uniform mat3 matrix_normal;
+vec3 dPositionW;
+mat4 dModelMatrix;
+mat3 dNormalMatrix;
+vec3 dLightPosW;
+vec3 dLightDirNormW;
+vec3 dNormalW;
+
+vec2 getUv0() {
+    return vertex_texCoord0;
+}
+mat4 getModelMatrix() {
+    return matrix_model;
+}
+vec4 getPosition() {
+    dModelMatrix = getModelMatrix();
+    vec4 posW = dModelMatrix * vec4(vertex_position, 1.0);
+    dPositionW = posW.xyz;
+    return matrix_viewProjection * posW;
+}
+vec3 getWorldPosition() {
+    return dPositionW;
+}
+
+
+void main(void) {
+    gl_Position = getPosition();
+   vPositionW    = getWorldPosition();
+   vec2 uv0 = getUv0();
+   vUv0 = uv0;
+}^PS^#extension GL_OES_standard_derivatives : enable
+
+precision highp float;
+
+varying vec3 vPositionW;
+varying vec2 vUv0;
+
+uniform vec3 view_position;
+uniform vec3 light_globalAmbient;
+float square(float x) {
+    return x*x;
+}
+float saturate(float x) {
+    return clamp(x, 0.0, 1.0);
+}
+vec3 saturate(vec3 x) {
+    return clamp(x, vec3(0.0), vec3(1.0));
+}
+vec4 dReflection;
+vec3 dAlbedo;
+vec3 dDiffuseLight;
+vec3 dSpecularLight;
+vec3 dSpecularity;
+float dAlpha;
+
+vec4 texture2DSRGB(sampler2D tex, vec2 uv) {
+    return texture2D(tex, uv);
+}
+vec4 textureCubeSRGB(samplerCube tex, vec3 uvw) {
+    return textureCube(tex, uvw);
+}
+vec3 gammaCorrectOutput(vec3 color) {
+    return color;
+}
+vec3 gammaCorrectInput(vec3 color) {
+    return color;
+}
+float gammaCorrectInput(float color) {
+    return color;
+}
+vec4 gammaCorrectInput(vec4 color) {
+    return color;
+}
+vec3 toneMap(vec3 color) {
+    return color;
+}
+vec3 addFog(vec3 color) {
+    return color;
+}
+uniform vec3 material_diffuse;
+void getAlbedo() {
+    dAlbedo = material_diffuse.rgb;
+}
+uniform float material_opacity;
+void getOpacity() {
+    dAlpha = material_opacity;
+}
+uniform vec3 material_emissive;
+vec3 getEmission() {
+    return material_emissive;
+}
+vec3 combineColor() {
+    return dAlbedo * dDiffuseLight;
+}
+
+void addAmbient() {
+    dDiffuseLight += light_globalAmbient;
+}
+uniform sampler2D texture_msdfMap;
+float median(float r, float g, float b) {
+    return max(min(r, g), min(max(r, g), b));
+}
+vec4 applyMsdf(vec4 color) {
+    vec3 sample = texture2D(texture_msdfMap, vUv0).rgb;
+    float distance = median(sample.r, sample.g, sample.b) - 0.5;
+    vec4 msdf;
+    #ifdef GL_OES_standard_derivatives
+    vec4 background = vec4(0.0);
+    float opacity = clamp(distance/fwidth(distance) + 0.5, 0.0, 1.0);
+    msdf = mix(background, color, opacity);
+    if (msdf.a < 0.01) {
+        discard;
+    }
+    #else
+    msdf = color;
+    if (distance < 0.1) {
+        discard;
+    }
+    #endif
+    return msdf;
+}
+
+void main(void) {
+    dDiffuseLight = vec3(0);
+    dSpecularLight = vec3(0);
+    dReflection = vec4(0);
+    dSpecularity = vec3(0);
+   getOpacity();
+   getAlbedo();
+   addAmbient();
+
+   gl_FragColor.rgb = combineColor();
+   gl_FragColor.rgb += getEmission();
+   gl_FragColor.rgb = addFog(gl_FragColor.rgb);
+   gl_FragColor.rgb = toneMap(gl_FragColor.rgb);
+   gl_FragColor.rgb = gammaCorrectOutput(gl_FragColor.rgb);
+gl_FragColor.rgb *= dAlpha;
+gl_FragColor.a = dAlpha;
+   gl_FragColor = applyMsdf(gl_FragColor);
+
+}
+^AT^vertex_position,POSITION,vertex_texCoord0,TEXCOORD0,^SH^-413681143^VS^varying vec3 vPositionW;
+varying vec2 vUV0_1;
+
+
+
+attribute vec3 vertex_position;
+attribute vec3 vertex_normal;
+attribute vec4 vertex_tangent;
+attribute vec2 vertex_texCoord0;
+attribute vec2 vertex_texCoord1;
+attribute vec4 vertex_color;
+uniform mat4 matrix_viewProjection;
+uniform mat4 matrix_model;
+uniform mat3 matrix_normal;
+vec3 dPositionW;
+mat4 dModelMatrix;
+mat3 dNormalMatrix;
+vec3 dLightPosW;
+vec3 dLightDirNormW;
+vec3 dNormalW;
+
+vec2 getUv0() {
+    return vertex_texCoord0;
+}
+uniform vec4 texture_emissiveMapTransform;
+uniform vec4 texture_opacityMapTransform;
+mat4 getModelMatrix() {
+    return matrix_model;
+}
+vec4 getPosition() {
+    dModelMatrix = getModelMatrix();
+    vec4 posW = dModelMatrix * vec4(vertex_position, 1.0);
+    dPositionW = posW.xyz;
+    return matrix_viewProjection * posW;
+}
+vec3 getWorldPosition() {
+    return dPositionW;
+}
+
+
+void main(void) {
+    gl_Position = getPosition();
+   vPositionW    = getWorldPosition();
+   vec2 uv0 = getUv0();
+   vUV0_1 = uv0 * texture_emissiveMapTransform.xy + texture_emissiveMapTransform.zw;
+}^PS^#extension GL_OES_standard_derivatives : enable
+
+precision highp float;
+
+varying vec3 vPositionW;
+varying vec2 vUV0_1;
+
+uniform vec3 view_position;
+uniform vec3 light_globalAmbient;
+float square(float x) {
+    return x*x;
+}
+float saturate(float x) {
+    return clamp(x, 0.0, 1.0);
+}
+vec3 saturate(vec3 x) {
+    return clamp(x, vec3(0.0), vec3(1.0));
+}
+vec4 dReflection;
+vec3 dAlbedo;
+vec3 dNormalW;
+vec3 dViewDirW;
+vec3 dDiffuseLight;
+vec3 dSpecularLight;
+vec3 dLightDirNormW;
+vec3 dSpecularity;
+float dGlossiness;
+float dAlpha;
+
+vec4 texture2DSRGB(sampler2D tex, vec2 uv) {
+    return texture2D(tex, uv);
+}
+vec4 textureCubeSRGB(samplerCube tex, vec3 uvw) {
+    return textureCube(tex, uvw);
+}
+vec3 gammaCorrectOutput(vec3 color) {
+    return color;
+}
+vec3 gammaCorrectInput(vec3 color) {
+    return color;
+}
+float gammaCorrectInput(float color) {
+    return color;
+}
+vec4 gammaCorrectInput(vec4 color) {
+    return color;
+}
+vec3 toneMap(vec3 color) {
+    return color;
+}
+vec3 addFog(vec3 color) {
+    return color;
+}
+uniform vec3 material_diffuse;
+void getAlbedo() {
+    dAlbedo = material_diffuse.rgb;
+}
+uniform sampler2D texture_opacityMap;
+uniform float material_opacity;
+void getOpacity() {
+    dAlpha = texture2D(texture_opacityMap, vUV0_1).a * material_opacity;
+}
+uniform sampler2D texture_emissiveMap;
+vec3 getEmission() {
+    return texture2DSRGB(texture_emissiveMap, vUV0_1).rgb;
+}
+float antiAliasGlossiness(float power) {
+    return power;
+}
+uniform vec3 material_specular;
+void getSpecularity() {
+    dSpecularity = material_specular;
+}
+uniform float material_shininess;
+void getGlossiness() {
+    dGlossiness = material_shininess + 0.0000001;
+}
+// Schlick's approximation
+uniform float material_fresnelFactor; // unused
+void getFresnel() {
+    float fresnel = 1.0 - max(dot(dNormalW, dViewDirW), 0.0);
+    float fresnel2 = fresnel * fresnel;
+    fresnel *= fresnel2 * fresnel2;
+    fresnel *= dGlossiness * dGlossiness;
+    dSpecularity = dSpecularity + (1.0 - dSpecularity) * fresnel;
+}
+// Energy-conserving (hopefully) Blinn-Phong
+float getLightSpecular() {
+    vec3 h = normalize( -dLightDirNormW + dViewDirW );
+    float nh = max( dot( h, dNormalW ), 0.0 );
+    float specPow = exp2(dGlossiness * 11.0); // glossiness is linear, power is not; 0 - 2048
+    specPow = antiAliasGlossiness(specPow);
+    // Hack: On Mac OS X, calling pow with zero for the exponent generates hideous artifacts so bias up a little
+    specPow = max(specPow, 0.0001);
+    return pow(nh, specPow) * (specPow + 2.0) / 8.0;
+}
+vec3 combineColor() {
+    return mix(dAlbedo * dDiffuseLight, dSpecularLight + dReflection.rgb * dReflection.a, dSpecularity);
+}
+
+void addAmbient() {
+    dDiffuseLight += light_globalAmbient;
+}
+
+void main(void) {
+    dDiffuseLight = vec3(0);
+    dSpecularLight = vec3(0);
+    dReflection = vec4(0);
+    dSpecularity = vec3(0);
+   getOpacity();
+   getAlbedo();
+   addAmbient();
+
+   gl_FragColor.rgb = combineColor();
+   gl_FragColor.rgb += getEmission();
+   gl_FragColor.rgb = addFog(gl_FragColor.rgb);
+   gl_FragColor.rgb = toneMap(gl_FragColor.rgb);
+   gl_FragColor.rgb = gammaCorrectOutput(gl_FragColor.rgb);
+gl_FragColor.a = dAlpha;
+
+}
+^AT^vertex_position,POSITION,vertex_texCoord0,TEXCOORD0,
